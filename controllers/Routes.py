@@ -1,16 +1,31 @@
-from flask import Blueprint
-from controllers import UsersControllers
+from flask import abort, Blueprint, jsonify, request
+from controllers import userControllers
+from controllers.functions import validateInputs
 
-routes = Blueprint("routes", __name__)
+routes = Blueprint('routes', __name__)
 
-@routes.route("/signupUser", methods=["POST"])
+@routes.route('/signUpUser', methods=["POST"])
 def signUpUser():
-    return UsersControllers.createUser()
+    data = request.get_json()
+    errors = []
 
-@routes.route("/signinUser", methods=["POST"])
-def signInUser():
-    return
+    nameValidate = validateInputs.validateName(data.get('name'))
+    if not nameValidate['status']:
+        errors.append(nameValidate['mensagem'])
+    
+    emailValidate = validateInputs.validateEmail(data.get('email'))
+    if not emailValidate['status']:
+        errors.append(emailValidate['mensagem'])
+    
+    passwordValidate = validateInputs.validatePassword(data.get('password'))
+    if not passwordValidate['status']:
+        errors.append(passwordValidate['mensagem'])
+    
+    confirmPasswordValidation = validateInputs.validateConfirmPassword(data.get('password'), data.get('confirmPassword'))
+    if not confirmPasswordValidation['status']:
+        errors.append(confirmPasswordValidation['mensagem'])
 
-@routes.route("/registerCrattle", methods=["POST"])
-def registerCrattle():
-    return
+    if errors:
+        return jsonify({'mensagens': errors}), 400
+
+    return {'mensagem': 'Vou cadastrar você...'}
