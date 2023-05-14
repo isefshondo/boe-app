@@ -28,4 +28,4 @@ def signUpUser():
     if errors:
         return jsonify({'mensagens': errors}), 400
 
-    return {'mensagem': 'Vou cadastrar você...'}
+    return userControllers.signUpUser(data)
