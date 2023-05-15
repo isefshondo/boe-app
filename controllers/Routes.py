@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from controllers import userControllers
+from controllers import userControllers, appControllers
 from controllers.functions import validateInputs
 
 routes = Blueprint('routes', __name__)
@@ -48,3 +48,7 @@ def logInUser():
     }
 
     return userControllers.logInUser(userLogin)
+
+@routes.route('/menu', methods=["GET"])
+def menu():
+    return appControllers.menu()

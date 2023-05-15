@@ -11,7 +11,7 @@ def signUpUser(data):
     password = data.get('password')
     hashPassword = bcrypt.hashpw(password.encode('utf-8'), saltComplexity)
 
-    if db.collection.count_documents({'email': data.get('email')}) == 0:
+    if collection.count_documents({'email': data.get('email')}) == 0:
         collection.insert_one({
             'name': data.get('name'),
             'email': data.get('email'),
@@ -27,7 +27,7 @@ def signUpUser(data):
 def logInUser(userData):
     collection = db['users']
 
-    userLogin = db.collection.find_one({'email': userData['email']})
+    userLogin = collection.find_one({'email': userData['email']})
 
     if userLogin:
         loginPassword = userLogin['password']
