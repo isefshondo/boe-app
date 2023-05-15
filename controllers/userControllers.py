@@ -33,7 +33,7 @@ def logInUser(userData):
         loginPassword = userLogin['password']
         
         if bcrypt.checkpw(userData['password'], loginPassword.encode('utf-8')):
-            token = jwt.encode({'email': userLogin['email'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, current_app.config['SECRET_KEY'], algorithm='HS256')
+            token = jwt.encode({'id': userLogin['_id'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, current_app.config['SECRET_KEY'], algorithm='HS256')
             return jsonify({'token': token})
 
     return make_response(jsonify({'mensagem': 'Não pode fazer o login! Tente novamente...'}), 401)
