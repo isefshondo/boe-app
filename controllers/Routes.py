@@ -49,6 +49,5 @@ def logInUser():
 
     return userControllers.logInUser(userLogin)
 
-@routes.route('/menu', methods=["GET"])
-def menu():
-    return appControllers.menu()
+# @routes.route('/perfilUsuario/<id>', methods=["GET"])
+# def userProfile(id):
