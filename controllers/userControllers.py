@@ -1,4 +1,4 @@
-from flask import jsonify, make_response
+from flask import jsonify, make_response, current_app
 
 import bcrypt
 import jwt
@@ -20,7 +20,7 @@ def signUpUser(data):
 
         response = make_response(jsonify({'mensagem': 'Usuário criado com sucesso!'}), 201)
     else:
-        response = make_response(jsonify({'mensagem': 'O email usado já está cadastrado...'}), 400)
+        response = make_response(jsonify({'mensagem': 'O email digitado já está cadastrado...'}), 400)
     
     return response
 
@@ -33,6 +33,7 @@ def logInUser(userData):
         loginPassword = userLogin['password']
         
         if bcrypt.checkpw(userData['password'], loginPassword.encode('utf-8')):
-            return
+            token = jwt.encode({'email': userLogin['email'], 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, current_app.config['SECRET_KEY'], algorithm='HS256')
+            return jsonify({'token': token})
 
     return make_response(jsonify({'mensagem': 'Não pode fazer o login! Tente novamente...'}), 401)
