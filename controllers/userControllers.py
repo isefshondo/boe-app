@@ -61,7 +61,11 @@ def getUserData(id):
     doesUserExists = collection.find_one({'_id': ObjectId(id)})
 
     if doesUserExists is not None:
-        return jsonify(doesUserExists)
+        return jsonify({
+            '_id': doesUserExists['_id'],
+            'nome': doesUserExists['nome'],
+            'email': doesUserExists['email']
+        })
     else:
         return make_response(jsonify({'mensagem': 'Usuário não encontrado.'}), 404)
     
@@ -70,8 +74,8 @@ def updateUserData(id, data):
 
     doesUserExists = collection.find_one({'_id': ObjectId(id)})
 
-    # Lembre-se que é preciso verificar a senha, já que ela vem codificada do banco de dados
-    # Não só aqui, na função de cima tbm
-
     if doesUserExists is not None:
         collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data.get('nome'), 'email': data.get('email'), 'senha': data.get('senha')}})
+        return jsonify({'mensagem': 'Dados do usuário alterados com sucesso!'})
+    else:
+        return jsonify({'mensagem': 'Não foi possível encontrar um usuário.'})

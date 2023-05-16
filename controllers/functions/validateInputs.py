@@ -1,5 +1,3 @@
-from flask import request
-
 import re
 
 def validateName(name):

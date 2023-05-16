@@ -5,7 +5,7 @@ from controllers.functions import validateInputs, auth
 
 routes = Blueprint('routes', __name__)
 
-@routes.route('/signUpUser', methods=["POST"])
+@routes.route('/cadastroUsuario', methods=["POST"])
 def signUpUser():
     data = request.get_json()
 
@@ -39,7 +39,7 @@ def signUpUser():
 
     return userControllers.signupUser(data)
 
-@routes.route('/logInUser', methods=["POST"])
+@routes.route('/loginUsuario', methods=["POST"])
 def logInUser():
     data = request.get_json()
 
