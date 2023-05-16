@@ -73,3 +73,8 @@ def updateUserData(userToken):
         return jsonify({'mensagens': errors}), 400
 
     return userControllers.updateUserData(userToken["_id"], data)
+
+@routes.route('/listarPositivos', methods=["GET"])
+@auth.authenticationRequired
+def getPositiveCases(userToken):
+    return
