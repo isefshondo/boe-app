@@ -10,10 +10,10 @@ def signUpUser():
     data = request.get_json()
 
     userData = {
-        'name': data.get('name'),
+        'name': data.get('nome'),
         'email': data.get('email'),
-        'password': data.get('password'),
-        'confirmPassword': data.get('confirmPassword')
+        'password': data.get('senha'),
+        'confirmPassword': data.get('confirmaSenha')
     }
 
     errors = []
@@ -37,20 +37,39 @@ def signUpUser():
     if errors:
         return jsonify({'mensagens': errors}), 400
 
-    return userControllers.signUpUser(data)
+    return userControllers.signupUser(data)
 
 @routes.route('/logInUser', methods=["POST"])
 def logInUser():
     data = request.get_json()
 
-    userLogin = {
-        'email': data.get('email'),
-        'password': data.get('password')
-    }
+    return userControllers.loginUser(data)
 
-    return userControllers.logInUser(userLogin)
-
-@routes.route('/perfilUsuario', methods=['GET'])
+@routes.route('/perfilUsuario', methods=["GET"])
 @auth.authenticationRequired
 def getUserData(userToken):
-    return jsonify({'mensagem': userToken['id']})
+    return userControllers.getUserData(userToken["_id"])
+
+@routes.route('/atualizarUsuario', methods=["POST"])
+@auth.authenticationRequired
+def updateUserData(userToken):
+    data = request.get_json()
+
+    errors = []
+
+    nameValidate = validateInputs.validateName(data.get('nome'))
+    if not nameValidate['status']:
+        errors.append(nameValidate['mensagem'])
+    
+    emailValidate = validateInputs.validateEmail(data.get('email'))
+    if not emailValidate['status']:
+        errors.append(emailValidate['mensagem'])
+    
+    passwordValidate = validateInputs.validatePassword(data.get('senha'))
+    if not passwordValidate['status']:
+        errors.append(passwordValidate['mensagem'])
+
+    if errors:
+        return jsonify({'mensagens': errors}), 400
+
+    return userControllers.updateUserData(userToken["_id"], data)

@@ -1,5 +1,6 @@
 from flask import current_app, jsonify, request
 from functools import wraps
+from bson import ObjectId
 
 from models.db import db
 
@@ -8,37 +9,25 @@ import jwt
 def authenticationRequired(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.headers['Authorization']
-        return jsonify({'mensagem': token})
+        collection = db['usuarios']
 
-# def doesUserExists(id):
-#     collection = db['user']
-#     userExists = collection.find_one({'_id': id})
+        token = (request.headers['Authorization']).split()[1]
 
-#     print
-
-#     return userExists is not None
-
-# def authRequired(f):
-#     @wraps(f)
-#     def decorated(*args, **kwargs):
-#         token = request.headers['Authorization'].split()[1]
-
-#         if token is None:
-#             return jsonify({'message': 'Não foi fornecido um token de autenticação...'}), 401
+        if token is None:
+            return jsonify({'mensagem': 'Forneça um token de autenticação para continuar com a operação...'}), 401
         
-#         try:
-#             tokenAuth = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        try:
+            decodedToken = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms='HS256')
 
-#             id = tokenAuth['id']
+            doesUserExists = collection.find_one({'_id': ObjectId(decodedToken['_id'])})
 
-#             if not doesUserExists(id):
-#                 return jsonify({'message': 'Usuário não encontrado...'}), 404
+            if doesUserExists is None:
+                return jsonify({'mensagem': 'Usuário não foi encontrado...'}), 404
             
-#             return f(tokenAuth, *args, **kwargs)
-#         except jwt.ExpiredSignatureError:
-#             return jsonify({'message': 'Tempo de uso atingido! Token expirado'}), 401
-#         except jwt.InvalidTokenError:
-#             return jsonify({'message': 'Token inválido...'}), 401
+            return f(decodedToken, *args, **kwargs)
+        except jwt.ExpiredSignatureError:
+            return jsonify({'mensagem': 'Tempo de uso atingido! Faça novamente o login para explorar o aplicativo'}), 404
+        except jwt.InvalidTokenError:
+            return jsonify({'mensagem': 'Ação não é válida (Token inválido).'}), 401
         
-#     return decorated
+    return decorated

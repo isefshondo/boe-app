@@ -1,4 +1,6 @@
 from flask import jsonify, make_response, current_app
+from bson import ObjectId
+
 from models.db import db
 
 import bcrypt
@@ -49,9 +51,27 @@ def loginUser(data):
                     'email': doesUserExists['email']
                 },
                 'mensagem': 'Usuário logado com sucesso!'
-            })
+            }), 200
     else:
         return make_response(jsonify({'mensagem': 'Usuário não encontrado. Por favor, cadastre-se primeiramente.'}), 401)
 
-def getUserData(data):
-    return 
+def getUserData(id):
+    collection = db['usuarios']
+
+    doesUserExists = collection.find_one({'_id': ObjectId(id)})
+
+    if doesUserExists is not None:
+        return jsonify(doesUserExists)
+    else:
+        return make_response(jsonify({'mensagem': 'Usuário não encontrado.'}), 404)
+    
+def updateUserData(id, data):
+    collection = db['usuarios']
+
+    doesUserExists = collection.find_one({'_id': ObjectId(id)})
+
+    # Lembre-se que é preciso verificar a senha, já que ela vem codificada do banco de dados
+    # Não só aqui, na função de cima tbm
+
+    if doesUserExists is not None:
+        collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data.get('nome'), 'email': data.get('email'), 'senha': data.get('senha')}})
