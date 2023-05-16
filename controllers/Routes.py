@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
-from controllers import userControllers, appControllers
-from controllers.functions import validateInputs
+
+from controllers import userControllers
+from controllers.functions import validateInputs, auth
 
 routes = Blueprint('routes', __name__)
 
@@ -44,10 +45,12 @@ def logInUser():
 
     userLogin = {
         'email': data.get('email'),
-        'password': data.get('password').encode('utf-8')
+        'password': data.get('password')
     }
 
     return userControllers.logInUser(userLogin)
 
-# @routes.route('/perfilUsuario/<id>', methods=["GET"])
-# def userProfile(id):
+@routes.route('/perfilUsuario', methods=['GET'])
+@auth.authenticationRequired
+def getUserData(userToken):
+    return jsonify({'mensagem': userToken['id']})

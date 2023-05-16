@@ -1,4 +1,5 @@
 from flask import jsonify, make_response, current_app, request
+from models.db import db
 
 import jwt
 
