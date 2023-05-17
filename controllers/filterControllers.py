@@ -69,8 +69,11 @@ def getAllCases(id):
             dadosBoi = {
                 'nome': dados['nome'],
                 'fotoPerfil': dados['fotoPerfil'],
-                'status': dados['status']
+                'status': dados['status'],
+                'historicoRecente': historicoBoi
             }
+
+            boisFiltrados.append(dadosBoi)
         
         return boisFiltrados
     else:
