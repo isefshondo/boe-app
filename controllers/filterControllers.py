@@ -1,5 +1,6 @@
 from flask import jsonify, make_response, current_app
 from bson import ObjectId
+from datetime import date, timedelta
 
 from models.db import db
 
@@ -9,11 +10,30 @@ def getPositiveCases(id):
 
     doesUserExists = collectionUser.find_one({'_id': ObjectId(id)})
 
+    boisFiltrados = []    
+    dadosBois = None
+
     if doesUserExists is not None:
         
-        getHistoric = collectionCrattle.find({'idPecuarista': ObjectId(id)})
-        # TODO: getHistoric['historico'] - Usar for in para percorrer o array de historicos
-        # TODO: Pegar os bois que tem como dono aquele id + Pegar os historicos de cada boi retornado +
-        # TODO: Pegar o mais recente e que seja positivo
+        getBois = collectionCrattle.find({'idPecuarista': ObjectId(id)})
 
-    return
+        dataAtual = date.today()
+        diferencaMinima = timedelta(days=365)
+
+        for dados in getBois:
+            for historico in dados['historico']:
+                if historico['resultado'] > 70:
+                    diferenca = abs(historico['data'] - dataAtual)
+                    if diferenca < diferencaMinima:
+                        diferencaMinima = diferenca
+                        dadosBois = {
+                            'nome': dados['nome'],
+                            'fotoPerfil': dados['fotoPerfil'],
+                            'status': dados['status'],
+                            'resultados': historico
+                        }
+                        boisFiltrados.append(dadosBois)
+        
+        return boisFiltrados
+    else:
+        return jsonify({'mensagem': 'Não foi possível encontrar gados para este usuário.'}), 401
