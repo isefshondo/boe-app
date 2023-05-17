@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from controllers import userControllers
+from controllers import userControllers, filterControllers
 from controllers.functions import validateInputs, auth
 
 routes = Blueprint('routes', __name__)
@@ -77,4 +77,14 @@ def updateUserData(userToken):
 @routes.route('/listarPositivos', methods=["GET"])
 @auth.authenticationRequired
 def getPositiveCases(userToken):
+    return filterControllers.getPositiveCases(userToken['id'])
+
+@routes.route('/listarGados', methods=["GET"])
+@auth.authenticationRequired
+def getAllCases(userToken):
+    return filterControllers.getAllCases(userToken['id'])
+
+@routes.route('/menu', methods=["GET"])
+@auth.authenticationRequired
+def menu(userToken):
     return

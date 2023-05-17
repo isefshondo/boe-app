@@ -6,17 +6,17 @@ from models.db import db
 
 def getPositiveCases(id):
     collectionUser = db['usuarios']
-    collectionCrattle = db['gados']
+    collectionBoi = db['gados']
 
-    doesUserExists = collectionUser.find_one({'_id': ObjectId(id)})
+    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
 
     boisFiltrados = []
     dadosBoi = None
     historicoBoi = None
 
-    if doesUserExists is not None:
+    if doesUserExist is not None:
         
-        getBois = collectionCrattle.find({'idPecuarista': ObjectId(id)})
+        getBois = collectionBoi.find({'idPecuarista': id})
 
         dataAtual = date.today()
         diferencaMinima = timedelta(days=365)
@@ -30,6 +30,7 @@ def getPositiveCases(id):
                         historicoBoi = historico
             
             dadosBoi = {
+                'id': dados['_id'],
                 'nome': dados['nome'],
                 'fotoPerfil': dados['fotoPerfil'],
                 'status': dados['status'],
@@ -38,23 +39,23 @@ def getPositiveCases(id):
 
             boisFiltrados.append(dadosBoi)
         
-        return boisFiltrados
+        return jsonify({'filtroBois': boisFiltrados})
     else:
         return jsonify({'mensagem': 'Não foi possível encontrar gados para este usuário.'}), 401
 
 def getAllCases(id):
     collectionUser = db['usuarios']
-    collectionCrattle = db['gados']
+    collectionBoi = db['gados']
 
-    doesUserExists = collectionUser.find_one({'_id': ObjectId(id)})
+    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
 
     boisFiltrados = []
     dadosBoi = None
     historicoBoi = None
 
-    if doesUserExists is not None:
+    if doesUserExist is not None:
         
-        getBois = collectionCrattle.find({'idPecuarista': ObjectId(id)})
+        getBois = collectionBoi.find({'idPecuarista': id})
 
         dataAtual = date.today()
         diferencaMinima = timedelta(days=365)
@@ -67,6 +68,7 @@ def getAllCases(id):
                     historicoBoi = historico
             
             dadosBoi = {
+                'id': dados['_id'],
                 'nome': dados['nome'],
                 'fotoPerfil': dados['fotoPerfil'],
                 'status': dados['status'],
@@ -75,6 +77,41 @@ def getAllCases(id):
 
             boisFiltrados.append(dadosBoi)
         
-        return boisFiltrados
+        return jsonify({'filtroTodos': boisFiltrados})
     else:
         return jsonify({'mensagem': 'Não foi possível encontrar gados para este usuário.'}), 401
+    
+def getMenuData(id):
+    collectionUser = db['usuarios']
+    collectionBoi = db['gados']
+
+    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
+
+    if doesUserExist is not None:
+        nCasosRegistrados = collectionBoi.count_documents({'idPecuarista': id})
+        boisCadastrados = collectionBoi.find({'idPecuarista': id})
+
+        dataAtual = date.today()
+        diferencaMinima = timedelta(days=365)
+
+        gadosDoentes = 0
+
+        if nCasosRegistrados == 0:
+            return
+
+        for dados in boisCadastrados:
+            for historico in dados['historico']:
+                if historico['resultado'] > 70:
+                    diferenca = abs(historico['data'] - dataAtual)
+                    if diferenca < diferencaMinima:
+                        diferencaMinima = diferenca
+                        gadosDoentes += 1
+
+        calcCasosPositivos = (gadosDoentes * 100)/nCasosRegistrados
+
+        return jsonify({
+            'casosRegistrados': nCasosRegistrados,
+            'casosPositivosAtualmente': calcCasosPositivos
+        })
+    else:
+        return jsonify({'mensagem': 'Não foi possível encontrar este usuário'}), 401
