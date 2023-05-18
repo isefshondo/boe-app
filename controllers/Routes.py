@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 
-from controllers import userControllers, filterControllers
-from controllers.functions import validateInputs, auth
+from controllers import userControllers, filterControllers, gadoControllers
+from controllers.functions import validateInputs, auth, genResults
 
 routes = Blueprint('routes', __name__)
 
@@ -43,12 +43,17 @@ def signUpUser():
 def logInUser():
     data = request.get_json()
 
-    return userControllers.loginUser(data)
+    loginUsuario = {
+        'email': data.get('email'),
+        'senha': data.get('senha')
+    }
+
+    return userControllers.loginUser(loginUsuario)
 
 @routes.route('/perfilUsuario', methods=["GET"])
 @auth.authenticationRequired
 def getUserData(userToken):
-    return userControllers.getUserData(userToken["_id"])
+    return userControllers.getUserData(userToken["id"])
 
 @routes.route('/atualizarUsuario', methods=["POST"])
 @auth.authenticationRequired
@@ -72,7 +77,7 @@ def updateUserData(userToken):
     if errors:
         return jsonify({'mensagens': errors}), 400
 
-    return userControllers.updateUserData(userToken["_id"], data)
+    return userControllers.updateUserData(userToken["id"], data)
 
 @routes.route('/listarPositivos', methods=["GET"])
 @auth.authenticationRequired
@@ -84,7 +89,11 @@ def getPositiveCases(userToken):
 def getAllCases(userToken):
     return filterControllers.getAllCases(userToken['id'])
 
-@routes.route('/menu', methods=["GET"])
+# Esta rota é apenas para mostrar o resultado dado pela análise na hora de cadastrar
+# Na hora de subir a imagem
+# TODO: Variáveis globais
+@routes.route('/analisarResultados', methods=["POST"])
 @auth.authenticationRequired
-def menu(userToken):
-    return
+def cadastrarGado():
+    guardarResultados = genResults.generateResults()
+    return gadoControllers.analiseResultados(guardarResultados)

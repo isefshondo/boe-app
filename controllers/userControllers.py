@@ -11,8 +11,8 @@ def signupUser(data):
     collection = db['usuarios']
 
     salt = bcrypt.gensalt(8)
-    senha = data.get('senha')
-    senhaHashed = bcrypt.hashpw(senha.encode('utf-8'), salt)
+    senha = (data.get('senha')).encode('utf-8')
+    senhaHashed = bcrypt.hashpw(senha, salt)
 
     if collection.count_documents({'email': data.get('email')}) == 0:
         collection.insert_one({
@@ -30,30 +30,35 @@ def signupUser(data):
 def loginUser(data):
     collection = db['usuarios']
 
-    doesUserExists = collection.find_one({'email': data.get('email')})
+    doesUserExists = collection.find_one({'email': data['email']})
 
     if doesUserExists is not None:
         dbPassword = doesUserExists['senha']
+        
+        try:
+            if bcrypt.checkpw((data['senha']).encode('utf-8'), dbPassword):
+                payload = {
+                    'id': str(doesUserExists['_id']),
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+                }
 
-        if bcrypt.checkpw(data.get('senha').encode('utf-8'), dbPassword):
-            payload = {
-                'id': str(doesUserExists['_id']),
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-            }
+                token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
-            token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
-
-            return jsonify({
-                'userToken': token,
-                'userData': {
-                    '_id': doesUserExists['_id'],
-                    'nome': doesUserExists['nome'],
-                    'email': doesUserExists['email']
-                },
-                'mensagem': 'Usuário logado com sucesso!'
-            }), 200
+                return jsonify({
+                    'userToken': token,
+                    'userData': {
+                        '_id': str(doesUserExists['_id']),
+                        'nome': doesUserExists['nome'],
+                        'email': doesUserExists['email']
+                    },
+                    'mensagem': 'Usuário logado com sucesso!'
+                }), 200
+            else:
+                return make_response(jsonify({'mensagem': 'Email ou senha incorretos...'}), 400)
+        except UnicodeDecodeError:
+            return make_response(jsonify({'mensagem': 'Erro ao decodificar a senha do usuário.'}), 500)
     else:
-        return make_response(jsonify({'mensagem': 'Usuário não encontrado. Por favor, cadastre-se primeiramente.'}), 401)
+        return make_response(jsonify({'mensagem': 'Usuário não encontrado. Por favor, cadastre-se primeiramente.'}), 404)
 
 def getUserData(id):
     collection = db['usuarios']
@@ -62,7 +67,7 @@ def getUserData(id):
 
     if doesUserExists is not None:
         return jsonify({
-            '_id': doesUserExists['_id'],
+            'id': str(doesUserExists['_id']),
             'nome': doesUserExists['nome'],
             'email': doesUserExists['email']
         })
@@ -72,10 +77,14 @@ def getUserData(id):
 def updateUserData(id, data):
     collection = db['usuarios']
 
+    salt = bcrypt.gensalt(8)
+    senha = (data.get('senha')).encode('utf-8')
+    senhaHashed = bcrypt.hashpw(senha, salt)
+
     doesUserExists = collection.find_one({'_id': ObjectId(id)})
 
     if doesUserExists is not None:
-        collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data.get('nome'), 'email': data.get('email'), 'senha': data.get('senha')}})
+        collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data.get('nome'), 'email': data.get('email'), 'senha': senhaHashed}})
         return jsonify({'mensagem': 'Dados do usuário alterados com sucesso!'})
     else:
         return jsonify({'mensagem': 'Não foi possível encontrar um usuário.'})

@@ -19,7 +19,7 @@ def authenticationRequired(f):
         try:
             decodedToken = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms='HS256')
 
-            doesUserExists = collection.find_one({'_id': ObjectId(decodedToken['_id'])})
+            doesUserExists = collection.find_one({'_id': ObjectId(decodedToken['id'])})
 
             if doesUserExists is None:
                 return jsonify({'mensagem': 'Usuário não foi encontrado...'}), 404
