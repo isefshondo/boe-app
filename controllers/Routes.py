@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 
 from controllers import userControllers, filterControllers, gadoControllers
-from controllers.functions import validateInputs, auth, genResults
+from controllers.functions import validateInputs, auth
 
 routes = Blueprint('routes', __name__)
 
@@ -89,11 +89,7 @@ def getPositiveCases(userToken):
 def getAllCases(userToken):
     return filterControllers.getAllCases(userToken['id'])
 
-# Esta rota é apenas para mostrar o resultado dado pela análise na hora de cadastrar
-# Na hora de subir a imagem
-# TODO: Variáveis globais
-@routes.route('/analisarResultados', methods=["POST"])
+@routes.route('/analiseImagem', methods=["POST"])
 @auth.authenticationRequired
-def cadastrarGado():
-    guardarResultados = genResults.generateResults()
-    return gadoControllers.analiseResultados(guardarResultados)
+def analisarImagem():
+    return
