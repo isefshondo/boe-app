@@ -105,3 +105,11 @@ def signupOx(token, data):
         'img': request.files['imagem']
     }
     return OxControl.signupOx(token['id'], oxData)
+
+@routes.route('/updateOx/<idGado>', methods=["GET", "POST"])
+@auth.authenticationRequired
+def updateOx(idGado, data):
+    if request.method == 'GET':
+        return OxControl.getOxInfo(idGado)
+    if request.method == 'POST':
+        return OxControl.updateOx(idGado, data)

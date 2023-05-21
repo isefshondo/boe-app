@@ -63,9 +63,35 @@ def signupOx(id, data):
         'numIdentificacao': data['numIdentificacao'],
         'nomeGado': data['oxName'],
         'fotoPerfil': data['img'],
-        'status': None,
+        'status': 'Sem tratamento',
         'idPecuarista': id,
         'historico': recordsArray
     })
 
     cache.delete('tempData')
+
+def getOxInfo(idOx):
+    collectionOx = db['gados']
+
+    getOx = collectionOx.find_one({'_id': ObjectId(idOx)})
+
+    if getOx is None:
+        return jsonify({'mensagem': 'Não foi possível encontrar o gado selecionado'}, 400)
+    
+    return jsonify({
+        'numId': getOx['numIdentificacao'],
+        'nomeGado': getOx['nomeGado'],
+        'fotoPerfil': getOx['fotoPerfil'],
+        'status': getOx['status'],
+        'historico': getOx['historico']
+    })
+
+def updateOx(idOx, data):
+    collectionOx = db['gados']
+
+    getOx = collectionOx.find_one({'_id': ObjectId(idOx)})
+
+    if getOx is None:
+        return jsonify({'mensagem': 'Não foi possível encontrar o gado selecionado'}, 400)
+    
+    collectionOx.update_one({'_id': ObjectId(idOx)}, {'$set': {'status': data.get('status')}})
