@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from controllers import userControllers, filterControllers, gadoControllers
+from controllers import oxControllers, userControllers, filterControllers
 from controllers.functions import validateInputs, auth
 
 routes = Blueprint('routes', __name__)
@@ -89,7 +89,7 @@ def getPositiveCases(userToken):
 def getAllCases(userToken):
     return filterControllers.getAllCases(userToken['id'])
 
-@routes.route('/analiseImagem', methods=["POST"])
+@routes.route('/analisarImagem', methods=["POST"])
 @auth.authenticationRequired
-def analisarImagem():
+def analyzeImage():
     return
