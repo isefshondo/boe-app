@@ -7,7 +7,16 @@ from controllers.functions import gerarResultados
 
 import datetime
 
-def sendImgAnalyze(id):
+def sendImgAnalyze(id, idOx):
+    if idOx is not None:
+        getNumId = (db['gados']).find_one({'_id': ObjectId(idOx)})
+
+        return jsonify({
+            'numIdGado': getNumId['numIdentificacao'],
+            'nomeGado': getNumId['nomeGado'],
+            'results': analysisResult
+        })
+
     if "imagem" not in request.files:
         return jsonify({'mensagem': 'A imagem não foi enviada para a análise'}, 400)
     
@@ -38,7 +47,7 @@ def sendImgAnalyze(id):
         'results': analysisResult
     })
 
-def signupOx(id, data):
+def signupOx(id, idOx, data):
     doesUserExist = (db['usuarios']).find_one({'_id': ObjectId(id)})
 
     if doesUserExist is None:
@@ -58,6 +67,9 @@ def signupOx(id, data):
     }
 
     recordsArray.append(currentResults)
+
+    if idOx is not None:
+        collectionOx.update_one({'_id': idOx}, {'$set': {'historico': recordsArray}})
 
     collectionOx.insert_one({
         'numIdentificacao': data['numIdentificacao'],

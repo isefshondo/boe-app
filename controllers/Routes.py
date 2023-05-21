@@ -90,11 +90,11 @@ def getAllCases(userToken):
     return filterControllers.getAllCases(userToken['id'])
 
 # Here starts the Ox Controllers Part
-@routes.route('/sendAnalyzeImage', methods=["POST"])
+@routes.route('/sendAnalyzeImage/<idGado>', methods=["POST"])
 @auth.authenticationRequired
-def sendImgToAnalyze(token):
+def sendImgToAnalyze(token, idGado):
     # In this route, I need to return the result and its details
-    return OxControl.sendImgAnalyze(token['id'])
+    return OxControl.sendImgAnalyze(token['id'], idGado)
 
 @routes.route('/signupOx', methods=["GET", "POST"])
 @auth.authenticationRequired
