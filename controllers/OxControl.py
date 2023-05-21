@@ -1,14 +1,24 @@
 from flask import current_app, jsonify, make_response, request
+from bson import ObjectId
 
 from models.db import db
 from utils.cache import cache
 from controllers.functions import gerarResultados
 
-def sendImgAnalyze():
+import datetime
+
+def sendImgAnalyze(id):
     if "imagem" not in request.files:
         return jsonify({'mensagem': 'A imagem não foi enviada para a análise'}, 400)
     
+    doesUserExist = (db['usuarios']).find_one({'_id': ObjectId(id)})
+
+    if doesUserExist is None:
+        return jsonify({'mensagem': 'Não foi possível encontrar um usuário com esta identificação'}, 400)
+    
     img = request.files["imagem"]
+
+    numBois = (db['gados']).count_documents({'idPecuarista': id})
 
     analysisResult = gerarResultados.generateResults()
 
@@ -21,6 +31,41 @@ def sendImgAnalyze():
 
     cache.set('tempData', dataReturned)
 
+    # Maybe I will need to create a description
+
     return jsonify({
+        'numIdGado': f"AI0{numBois}",
         'results': analysisResult
     })
+
+def signupOx(id, data):
+    doesUserExist = (db['usuarios']).find_one({'_id': ObjectId(id)})
+
+    if doesUserExist is None:
+        return jsonify({'mensagem': 'Não foi possível encontrar um usuário com esta identificação'}, 400)
+    
+    cachedInformation = cache.get('tempData')
+
+    collectionOx = db['gados']
+
+    recordsArray = []
+
+    currentResults = {
+        'results': cachedInformation['results'],
+        'img': cachedInformation['img'],
+        'date': datetime.datetime.now().date()
+
+    }
+
+    recordsArray.append(currentResults)
+
+    collectionOx.insert_one({
+        'numIdentificacao': data['numIdentificacao'],
+        'nomeGado': data['oxName'],
+        'fotoPerfil': data['img'],
+        'status': None,
+        'idPecuarista': id,
+        'historico': recordsArray
+    })
+
+    cache.delete('tempData')

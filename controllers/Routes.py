@@ -92,6 +92,16 @@ def getAllCases(userToken):
 # Here starts the Ox Controllers Part
 @routes.route('/sendAnalyzeImage', methods=["POST"])
 @auth.authenticationRequired
-def sendImgToAnalyze():
+def sendImgToAnalyze(token):
     # In this route, I need to return the result and its details
-    return OxControl.sendImgAnalyze()
+    return OxControl.sendImgAnalyze(token['id'])
+
+@routes.route('/signupOx', methods=["GET", "POST"])
+@auth.authenticationRequired
+def signupOx(token, data):
+    oxData = {
+        'numIdentificacao': data.get('codigo'),
+        'oxName': data.get('nome'),
+        'img': request.files['imagem']
+    }
+    return OxControl.signupOx(token['id'], oxData)
