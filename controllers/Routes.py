@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from controllers import oxControllers, userControllers, filterControllers
+from controllers import userControllers, filterControllers, OxControl
 from controllers.functions import validateInputs, auth
 
 routes = Blueprint('routes', __name__)
@@ -89,7 +89,9 @@ def getPositiveCases(userToken):
 def getAllCases(userToken):
     return filterControllers.getAllCases(userToken['id'])
 
-@routes.route('/analisarImagem', methods=["POST"])
+# Here starts the Ox Controllers Part
+@routes.route('/sendAnalyzeImage', methods=["POST"])
 @auth.authenticationRequired
-def analyzeImage():
-    return
+def sendImgToAnalyze():
+    # In this route, I need to return the result and its details
+    return OxControl.sendImgAnalyze()
