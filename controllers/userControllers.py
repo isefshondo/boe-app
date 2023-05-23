@@ -1,6 +1,5 @@
-from flask import jsonify, make_response, current_app
 from bson import ObjectId
-
+from flask import jsonify, make_response, current_app
 from models.db import db
 
 import bcrypt
@@ -11,13 +10,13 @@ def signupUser(data):
     collection = db['usuarios']
 
     salt = bcrypt.gensalt(8)
-    senha = (data.get('senha')).encode('utf-8')
+    senha = (data['password']).encode('utf-8')
     senhaHashed = bcrypt.hashpw(senha, salt)
 
-    if collection.count_documents({'email': data.get('email')}) == 0:
+    if collection.count_documents({'email': data['email']}) == 0:
         collection.insert_one({
-            'nome': data.get('nome'),
-            'email': data.get('email'),
+            'nome': data['name'],
+            'email': data['email'],
             'senha': senhaHashed
         })
 
@@ -77,14 +76,24 @@ def getUserData(id):
 def updateUserData(id, data):
     collection = db['usuarios']
 
-    salt = bcrypt.gensalt(8)
-    senha = (data.get('senha')).encode('utf-8')
-    senhaHashed = bcrypt.hashpw(senha, salt)
+    if data['senha'] != "SENHA_PADRAO":
+        salt = bcrypt.gensalt(8)
+        senha = (data['senha']).encode('utf-8')
+        senhaHashed = bcrypt.hashpw(senha, salt)
 
-    doesUserExists = collection.find_one({'_id': ObjectId(id)})
+        doesUserExists = collection.find_one({'_id': ObjectId(id)})
 
-    if doesUserExists is not None:
-        collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data.get('nome'), 'email': data.get('email'), 'senha': senhaHashed}})
-        return jsonify({'mensagem': 'Dados do usuário alterados com sucesso!'})
-    else:
-        return jsonify({'mensagem': 'Não foi possível encontrar um usuário.'})
+        if doesUserExists is not None:
+            collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data['nome'], 'email': data['email'], 'senha': senhaHashed}})
+            return jsonify({'mensagem': 'Dados do usuário alterados com sucesso!'})
+        else:
+            return jsonify({'mensagem': 'Não foi possível encontrar um usuário.'})
+        
+    if data['senha'] == "SENHA_PADRAO":
+        doesUserExists = collection.find_one({'_id': ObjectId(id)})
+
+        if doesUserExists is not None:
+            collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data['nome'], 'email': data['email']}})
+            return jsonify({'mensagem': 'Dados do usuário alterados com sucesso!'})
+        else:
+            return jsonify({'mensagem': 'Não foi possível encontrar um usuário.'})

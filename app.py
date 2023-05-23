@@ -1,17 +1,16 @@
-from flask import Flask
-from utils import cache
+from controllers.utils import Cache
 from dotenv import load_dotenv
-
-from controllers.routes import routes
+from flask import Flask
+from controllers.Routes import routes
 
 import os
 
 load_dotenv()
 
 app = Flask(__name__)
-cache.configCache(app)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+Cache.configurationCache(app)
 
 app.register_blueprint(routes)
 

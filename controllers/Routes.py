@@ -1,7 +1,7 @@
+from controllers import FilterControllers, OxControllers, UserControllers
+from controllers.utils.functions import ValInputs
+from controllers.utils.security import Authentication
 from flask import Blueprint, jsonify, request
-
-from controllers import userControllers, filterControllers, OxControl
-from controllers.functions import validateInputs, auth
 
 routes = Blueprint('routes', __name__)
 
@@ -10,34 +10,34 @@ def signUpUser():
     data = request.get_json()
 
     userData = {
-        'name': data.get('nome'),
+        'name': data.get('name'),
         'email': data.get('email'),
-        'password': data.get('senha'),
-        'confirmPassword': data.get('confirmaSenha')
+        'password': data.get('password'),
+        'confirmPassword': data.get('confirmPassword')
     }
 
     errors = []
 
-    nameValidate = validateInputs.validateName(userData['name'])
+    nameValidate = ValInputs.validateName(userData['name'])
     if not nameValidate['status']:
         errors.append(nameValidate['mensagem'])
     
-    emailValidate = validateInputs.validateEmail(userData['email'])
+    emailValidate = ValInputs.validateEmail(userData['email'])
     if not emailValidate['status']:
         errors.append(emailValidate['mensagem'])
     
-    passwordValidate = validateInputs.validatePassword(userData['password'])
+    passwordValidate = ValInputs.validatePassword(userData['password'])
     if not passwordValidate['status']:
         errors.append(passwordValidate['mensagem'])
     
-    confirmPasswordValidation = validateInputs.validateConfirmPassword(userData['password'], userData['confirmPassword'])
+    confirmPasswordValidation = ValInputs.validateConfirmPassword(userData['password'], userData['confirmPassword'])
     if not confirmPasswordValidation['status']:
         errors.append(confirmPasswordValidation['mensagem'])
 
     if errors:
         return jsonify({'mensagens': errors}), 400
 
-    return userControllers.signupUser(data)
+    return UserControllers.signupUser(userData)
 
 @routes.route('/loginUsuario', methods=["POST"])
 def logInUser():
@@ -45,71 +45,76 @@ def logInUser():
 
     loginUsuario = {
         'email': data.get('email'),
-        'senha': data.get('senha')
+        'senha': data.get('password')
     }
 
-    return userControllers.loginUser(loginUsuario)
+    return UserControllers.loginUser(loginUsuario)
 
-@routes.route('/perfilUsuario', methods=["GET"])
-@auth.authenticationRequired
-def getUserData(userToken):
-    return userControllers.getUserData(userToken["id"])
-
-@routes.route('/atualizarUsuario', methods=["POST"])
-@auth.authenticationRequired
+@routes.route('/atualizarUsuario', methods=["GET", "POST"])
+@Authentication.RequireAuth
 def updateUserData(userToken):
-    data = request.get_json()
+    userData = {
+        'nome': data.get('name'),
+        'email': data.get('email'),
+        'senha': data.get('password')
+    }
 
-    errors = []
-
-    nameValidate = validateInputs.validateName(data.get('nome'))
-    if not nameValidate['status']:
-        errors.append(nameValidate['mensagem'])
+    if request.method == "GET":
+        return UserControllers.getUserData(userToken["id"])
     
-    emailValidate = validateInputs.validateEmail(data.get('email'))
-    if not emailValidate['status']:
-        errors.append(emailValidate['mensagem'])
-    
-    passwordValidate = validateInputs.validatePassword(data.get('senha'))
-    if not passwordValidate['status']:
-        errors.append(passwordValidate['mensagem'])
+    if request.method == "POST":
+        data = request.get_json()
 
-    if errors:
-        return jsonify({'mensagens': errors}), 400
+        errors = []
 
-    return userControllers.updateUserData(userToken["id"], data)
+        nameValidate = ValInputs.validateName(userData['nome'])
+        if not nameValidate['status']:
+            errors.append(nameValidate['mensagem'])
+        
+        emailValidate = ValInputs.validateEmail(userData['email'])
+        if not emailValidate['status']:
+            errors.append(emailValidate['mensagem'])
+        
+        passwordValidate = ValInputs.validatePassword(userData['senha'])
+        if not passwordValidate['status']:
+            errors.append(passwordValidate['mensagem'])
+
+        if errors:
+            return jsonify({'mensagens': errors}), 400
+
+        return UserControllers.updateUserData(userToken["id"], userData)
 
 @routes.route('/listarPositivos', methods=["GET"])
-@auth.authenticationRequired
+@Authentication.RequireAuth
 def getPositiveCases(userToken):
-    return filterControllers.getPositiveCases(userToken['id'])
+    return FilterControllers.getPositiveCases(userToken['id'])
 
 @routes.route('/listarGados', methods=["GET"])
-@auth.authenticationRequired
+@Authentication.RequireAuth
 def getAllCases(userToken):
-    return filterControllers.getAllCases(userToken['id'])
+    return FilterControllers.getAllCases(userToken['id'])
 
 # Here starts the Ox Controllers Part
 @routes.route('/sendAnalyzeImage/<idGado>', methods=["POST"])
-@auth.authenticationRequired
+@Authentication.RequireAuth
 def sendImgToAnalyze(token, idGado):
     # In this route, I need to return the result and its details
-    return OxControl.sendImgAnalyze(token['id'], idGado)
+    return OxControllers.sendImgAnalyze(token['id'], idGado)
 
-@routes.route('/signupOx', methods=["GET", "POST"])
-@auth.authenticationRequired
+@routes.route('/signupOx', methods=["POST"])
+@Authentication.RequireAuth
 def signupOx(token, data):
     oxData = {
         'numIdentificacao': data.get('codigo'),
         'oxName': data.get('nome'),
         'img': request.files['imagem']
     }
-    return OxControl.signupOx(token['id'], oxData)
+    return OxControllers.signupOx(token['id'], oxData)
 
 @routes.route('/updateOx/<idGado>', methods=["GET", "POST"])
-@auth.authenticationRequired
+@Authentication.RequireAuth
 def updateOx(idGado, data):
     if request.method == 'GET':
-        return OxControl.getOxInfo(idGado)
+        return OxControllers.getOxInfo(idGado)
     if request.method == 'POST':
-        return OxControl.updateOx(idGado, data)
+        return OxControllers.updateOx(idGado, data)
