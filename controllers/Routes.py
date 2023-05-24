@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, request
 
 routes = Blueprint('routes', __name__)
 
-@routes.route('/cadastroUsuario', methods=["POST"])
+@routes.route('/signupUser', methods=["POST"])
 def signUpUser():
     data = request.get_json()
 
@@ -37,9 +37,9 @@ def signUpUser():
     if errors:
         return jsonify({'mensagens': errors}), 400
 
-    return UserControllers.signupUser(userData)
+    return UserControllers.signupUser(userData['name'], userData['email'], userData['password'])
 
-@routes.route('/loginUsuario', methods=["POST"])
+@routes.route('/loginUser', methods=["POST"])
 def logInUser():
     data = request.get_json()
 
@@ -48,15 +48,15 @@ def logInUser():
         'senha': data.get('password')
     }
 
-    return UserControllers.loginUser(loginUsuario)
+    return UserControllers.loginUser(loginUsuario['email'], loginUsuario['senha'])
 
 @routes.route('/atualizarUsuario', methods=["GET", "POST"])
 @Authentication.RequireAuth
 def updateUserData(userToken):
     userData = {
-        'nome': data.get('name'),
+        'name': data.get('name'),
         'email': data.get('email'),
-        'senha': data.get('password')
+        'password': data.get('password')
     }
 
     if request.method == "GET":
@@ -67,7 +67,7 @@ def updateUserData(userToken):
 
         errors = []
 
-        nameValidate = ValInputs.validateName(userData['nome'])
+        nameValidate = ValInputs.validateName(userData['name'])
         if not nameValidate['status']:
             errors.append(nameValidate['mensagem'])
         
@@ -75,14 +75,14 @@ def updateUserData(userToken):
         if not emailValidate['status']:
             errors.append(emailValidate['mensagem'])
         
-        passwordValidate = ValInputs.validatePassword(userData['senha'])
+        passwordValidate = ValInputs.validatePassword(userData['password'])
         if not passwordValidate['status']:
             errors.append(passwordValidate['mensagem'])
 
         if errors:
             return jsonify({'mensagens': errors}), 400
 
-        return UserControllers.updateUserData(userToken["id"], userData)
+        return UserControllers.updateUserData(userToken["id"], userData['name'], userData['email'], userData['password'])
 
 @routes.route('/listarPositivos', methods=["GET"])
 @Authentication.RequireAuth

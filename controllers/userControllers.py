@@ -1,22 +1,23 @@
 from bson import ObjectId
 from flask import jsonify, make_response, current_app
 from models.db import db
+from pymongo import errors
 
 import bcrypt
 import jwt
 import datetime
 
-def signupUser(data):
+def signupUser(name, email, password):
     collection = db['usuarios']
 
     salt = bcrypt.gensalt(8)
-    senha = (data['password']).encode('utf-8')
+    senha = (password).encode('utf-8')
     senhaHashed = bcrypt.hashpw(senha, salt)
 
-    if collection.count_documents({'email': data['email']}) == 0:
+    if collection.count_documents({'email': email}) == 0:
         collection.insert_one({
-            'nome': data['name'],
-            'email': data['email'],
+            'nome': name,
+            'email': email,
             'senha': senhaHashed
         })
 
@@ -26,18 +27,18 @@ def signupUser(data):
     
     return response
 
-def loginUser(data):
+def loginUser(email, password):
     collection = db['usuarios']
 
-    doesUserExists = collection.find_one({'email': data['email']})
+    doesUserExist = collection.find_one({'email': email})
 
-    if doesUserExists is not None:
-        dbPassword = doesUserExists['senha']
+    if doesUserExist is not None:
+        dbPassword = doesUserExist['senha']
         
         try:
-            if bcrypt.checkpw((data['senha']).encode('utf-8'), dbPassword):
+            if bcrypt.checkpw((password).encode('utf-8'), dbPassword):
                 payload = {
-                    'id': str(doesUserExists['_id']),
+                    'id': str(doesUserExist['_id']),
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
                 }
 
@@ -46,9 +47,9 @@ def loginUser(data):
                 return jsonify({
                     'userToken': token,
                     'userData': {
-                        '_id': str(doesUserExists['_id']),
-                        'nome': doesUserExists['nome'],
-                        'email': doesUserExists['email']
+                        '_id': str(doesUserExist['_id']),
+                        'nome': doesUserExist['nome'],
+                        'email': doesUserExist['email']
                     },
                     'mensagem': 'Usuário logado com sucesso!'
                 }), 200
@@ -60,40 +61,47 @@ def loginUser(data):
         return make_response(jsonify({'mensagem': 'Usuário não encontrado. Por favor, cadastre-se primeiramente.'}), 404)
 
 def getUserData(id):
-    collection = db['usuarios']
+    collectionUser = db['usuarios']
 
-    doesUserExists = collection.find_one({'_id': ObjectId(id)})
+    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
 
-    if doesUserExists is not None:
-        return jsonify({
-            'id': str(doesUserExists['_id']),
-            'nome': doesUserExists['nome'],
-            'email': doesUserExists['email']
-        })
-    else:
-        return make_response(jsonify({'mensagem': 'Usuário não encontrado.'}), 404)
+    if doesUserExist is None:
+        response = jsonify({'message': 'User not found...'})
+        response.status_code = 404
+        response.headers['Content-Type'] = 'application/json'
+
+        return response
     
-def updateUserData(id, data):
-    collection = db['usuarios']
+    return jsonify({
+        'id': str(doesUserExist['_id']),
+        'name': doesUserExist['nome'],
+        'email': doesUserExist['email'],
+        'password': 'PATTERN-PASS'
+    }), 200
+    
+def updateUserData(id, name, email, password):
+    collectionUser = db['usuarios']
 
-    if data['senha'] != "SENHA_PADRAO":
-        salt = bcrypt.gensalt(8)
-        senha = (data['senha']).encode('utf-8')
-        senhaHashed = bcrypt.hashpw(senha, salt)
+    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
 
-        doesUserExists = collection.find_one({'_id': ObjectId(id)})
-
-        if doesUserExists is not None:
-            collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data['nome'], 'email': data['email'], 'senha': senhaHashed}})
-            return jsonify({'mensagem': 'Dados do usuário alterados com sucesso!'})
+    try:
+        if password == 'PATTERN-PASS' or bcrypt.checkpw((password).encode('utf-8'), doesUserExist['senha']) is True:
+            collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email}})
         else:
-            return jsonify({'mensagem': 'Não foi possível encontrar um usuário.'})
-        
-    if data['senha'] == "SENHA_PADRAO":
-        doesUserExists = collection.find_one({'_id': ObjectId(id)})
+            salt = bcrypt.gensalt(8)
+            senha = (password).encode('utf-8')
+            pwHashed = bcrypt.hashpw(senha, salt)
 
-        if doesUserExists is not None:
-            collection.update_one({'_id': ObjectId(id)}, {'$set': {'nome': data['nome'], 'email': data['email']}})
-            return jsonify({'mensagem': 'Dados do usuário alterados com sucesso!'})
-        else:
-            return jsonify({'mensagem': 'Não foi possível encontrar um usuário.'})
+            collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email, 'senha': pwHashed}})
+
+            return jsonify({'message': 'Success! User data is updated'}), 201
+    except errors.ConnectionFailure:
+        return jsonify({
+            'message': 'Sorry! An error ocurred in our database, we cant conclude operations right now',
+            'description': 'Connection with database failed...'
+        }), 500
+    except errors.OperationFailure:
+        return jsonify({
+            'message': 'Sorry! We couldnt execute the process',
+            'description': 'PyMongo operation failed'
+        }), 500
