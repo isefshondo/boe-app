@@ -94,6 +94,11 @@ def getPositiveCases(userToken):
 def getAllCases(userToken):
     return FilterControllers.getAllCases(userToken['id'])
 
+@routes.route('/menu', methods=["GET"])
+@Authentication.RequireAuth
+def getMenuData(userToken):
+    return FilterControllers.getMenuData(userToken['id'])
+
 # Here starts the Ox Controllers Part
 @routes.route('/sendAnalyzeImage/<idGado>', methods=["POST"])
 @Authentication.RequireAuth

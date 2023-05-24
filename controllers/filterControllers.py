@@ -80,38 +80,53 @@ def getAllCases(id):
         return jsonify({'filtroTodos': boisFiltrados})
     else:
         return jsonify({'mensagem': 'Não foi possível encontrar gados para este usuário.'}), 401
-    
-def getMenuData(id):
+
+def getMenuData(idUser):
     collectionUser = db['usuarios']
     collectionBoi = db['gados']
 
-    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
+    doesUserExist = collectionUser.find_one({'_id': ObjectId(idUser)})
 
-    if doesUserExist is not None:
-        nCasosRegistrados = collectionBoi.count_documents({'idPecuarista': id})
-        boisCadastrados = collectionBoi.find({'idPecuarista': id})
+    if doesUserExist is None:
+        response = jsonify({'message': 'User not found...'})
+        response.status_code = 404
+        response.headers['Content-Type'] = 'application/json'
 
-        dataAtual = date.today()
-        diferencaMinima = timedelta(days=365)
+        return response
 
-        gadosDoentes = 0
+    numRegisteredCases = collectionBoi.count_documents({'idPecuarista': idUser})
 
-        if nCasosRegistrados == 0:
-            return
+    if numRegisteredCases == 0:
+        return None
+    
+    animalsRegistered = collectionBoi.find({'idPecuarista': idUser})
 
-        for dados in boisCadastrados:
-            for historico in dados['historico']:
-                if historico['resultado'] > 70:
-                    diferenca = abs(historico['data'] - dataAtual)
-                    if diferenca < diferencaMinima:
-                        diferencaMinima = diferenca
-                        gadosDoentes += 1
+    currentDate = date.today()
+    minDifference = timedelta(days=365)
 
-        calcCasosPositivos = (gadosDoentes * 100)/nCasosRegistrados
+    sickAnimals = 0
+    healthyAnimals = 0
 
-        return jsonify({
-            'casosRegistrados': nCasosRegistrados,
-            'casosPositivosAtualmente': calcCasosPositivos
-        })
-    else:
-        return jsonify({'mensagem': 'Não foi possível encontrar este usuário'}), 401
+    for dados in animalsRegistered:
+        for historico in dados['historico']:
+            difference = abs(historico['data'] - currentDate)
+            if historico['resultado'] > 75:
+                if difference < minDifference:
+                    minDifference = difference
+                    sickAnimals += 1
+            else:
+                if difference < minDifference:
+                    minDifference = difference
+                    healthyAnimals += 1
+    
+    positiveCases = (sickAnimals * 100)/numRegisteredCases
+
+    return jsonify({
+        'userName': doesUserExist['nome'],
+        'registeredCases': numRegisteredCases,
+        'positiveCases': positiveCases,
+        'generalCases': {
+            'positive': sickAnimals,
+            'negative': healthyAnimals
+        }
+    })

@@ -1,9 +1,8 @@
+from controllers.utils.functions import GenResults
 from flask import current_app, jsonify, make_response, request
 from bson import ObjectId
-
 from models.db import db
-from utils.cache import cache
-from controllers.functions import gerarResultados
+from controllers.utils import Cache
 
 import datetime
 

@@ -47,7 +47,7 @@ def loginUser(email, password):
                 return jsonify({
                     'userToken': token,
                     'userData': {
-                        '_id': str(doesUserExist['_id']),
+                        'id': str(doesUserExist['_id']),
                         'nome': doesUserExist['nome'],
                         'email': doesUserExist['email']
                     },
