@@ -2,6 +2,10 @@ from controllers import FilterControllers, OxControllers, UserControllers
 from controllers.utils.functions import ValInputs
 from controllers.utils.security import Authentication
 from flask import Blueprint, jsonify, request
+from PIL import Image
+
+import base64
+import io
 
 routes = Blueprint('routes', __name__)
 
@@ -100,25 +104,72 @@ def getMenuData(userToken):
     return FilterControllers.getMenuData(userToken['id'])
 
 # Here starts the Ox Controllers Part
+@routes.route('/imageAnalyze/', methods=["POST"])
+@Authentication.RequireAuth
+def sendImgToAnalyze(token):
+    data = request.get_json()
+
+    fileReceived = data['file']
+
+    # Image must be encoded by base64
+    imgDecoded = base64.b64decode(fileReceived)
+
+    image = Image.open(io.BytesIO(imgDecoded))
+
+    return OxControllers.imageAnalyze(token['id'], None, image)
+
 @routes.route('/imageAnalyze/<idOx>', methods=["POST"])
 @Authentication.RequireAuth
-def sendImgToAnalyze(token, idOx):
-    file = request.files['file']
-    # In this route, I need to return the result and its details
-    return OxControllers.imageAnalyze(token['id'], idOx, file)
+def analyzeRegisteredOx(token, idOx):
+    data = request.get_json()
+
+    fileReceived = data['file']
+
+    # Image must be encoded by base64
+    imgDecoded = base64.b64decode(fileReceived)
+
+    image = Image.open(io.BytesIO(imgDecoded))
+
+    return OxControllers.imageAnalyze(token['id'], idOx, image)
+
+
+@routes.route('/signupOx', methods=["POST"])
+@Authentication.RequireAuth
+def signupOx(token):
+    data = request.get_json()
+
+    fileReceived = data['file']
+
+    imgDecoded = base64.b64decode(fileReceived)
+
+    image = Image.open(io.BytesIO(imgDecoded))
+
+    oxData = {
+        'nTempIdOx': data.get("nTempIdOx"),
+        'name': data.get("name"),
+        'file': image
+    }
+
+    return OxControllers.signupOx(token['id'], None, oxData['nTempIdOx'], oxData['name'], oxData['file'])
 
 @routes.route('/signupOx/<idOx>', methods=["POST"])
 @Authentication.RequireAuth
-def signupOx(token, idOx):
+def updateRegisteredOx(token, idOx):
     data = request.get_json()
 
+    fileReceived = data['file']
+
+    imgDecoded = base64.b64decode(fileReceived)
+
+    image = Image.open(io.BytesIO(imgDecoded))
+
     oxData = {
-        'nTempIdOx': data.get('id'),
-        'name': data.get('name'),
-        'pfp': request.files['file']
+        'nTempIdOx': data.get("nTempIdOx"),
+        'name': data.get("name"),
+        'file': image
     }
 
-    return OxControllers.signupOx(token['id'], idOx, oxData['nTempIdOx'], oxData['name'], oxData['pfp'])
+    return OxControllers.signupOx(token['id'], idOx, oxData['nTempIdOx'], oxData['name'], oxData['file'])
 
 @routes.route('/updateOx/<idGado>', methods=["GET", "POST"])
 @Authentication.RequireAuth

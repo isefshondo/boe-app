@@ -75,17 +75,7 @@ def signupOx(id, idOx, tempId, name, pfp):
         'date': cachedResults['date']
     }
 
-    if idOx is not None:
-        findOx = collectionBoi.find_one({'_id': ObjectId(idOx)})
-
-        newRecords = findOx['historico']
-
-        newRecords.append(newRecord)
-
-        collectionBoi.update_one({'_id': idOx}, {'$set': {'historico': newRecords}})
-
-        return jsonify({'message': 'Success! Data saved successfully'}), 201
-    else:
+    if idOx is None:
         records = []
 
         records.append(newRecord)
@@ -98,8 +88,18 @@ def signupOx(id, idOx, tempId, name, pfp):
             'idPecuarista': id,
             'historico': records
         })
-    
+    else:
+        findOx = collectionBoi.find_one({'_id': ObjectId(idOx)})
+
+        newRecords = findOx['historico']
+
+        newRecords.append(newRecord)
+
+        collectionBoi.update_one({'_id': ObjectId(idOx)}, {'$set': {'historico': newRecords}})
+
     Cache.cache.delete('tempResults')
+    
+    return jsonify({'message': 'Success! Data saved successfully'}), 201
 
 def getOxInfo(idOx):
     collectionOx = db['gados']

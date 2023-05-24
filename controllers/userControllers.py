@@ -76,7 +76,7 @@ def getUserData(id):
         'id': str(doesUserExist['_id']),
         'name': doesUserExist['nome'],
         'email': doesUserExist['email'],
-        'password': 'PATTERN-PASS'
+        'password': 'P4TTERN-PASS'
     }), 200
     
 def updateUserData(id, name, email, password):
@@ -85,7 +85,7 @@ def updateUserData(id, name, email, password):
     doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
 
     try:
-        if password == 'PATTERN-PASS' or bcrypt.checkpw((password).encode('utf-8'), doesUserExist['senha']) is True:
+        if password == 'P4TTERN-PASS' or bcrypt.checkpw((password).encode('utf-8'), doesUserExist['senha']) is True:
             collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email}})
         else:
             salt = bcrypt.gensalt(8)
@@ -94,7 +94,7 @@ def updateUserData(id, name, email, password):
 
             collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email, 'senha': pwHashed}})
 
-            return jsonify({'message': 'Success! User data is updated'}), 201
+        return jsonify({'message': 'Success! User data is updated'}), 201
     except errors.ConnectionFailure:
         return jsonify({
             'message': 'Sorry! An error ocurred in our database, we cant conclude operations right now',

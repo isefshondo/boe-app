@@ -97,7 +97,15 @@ def getMenuData(idUser):
     numRegisteredCases = collectionBoi.count_documents({'idPecuarista': idUser})
 
     if numRegisteredCases == 0:
-        return None
+        return jsonify({
+            'userName': doesUserExist['nome'],
+            'registeredCases': None,
+            'positiveCases': None,
+            'generalCases': {
+                'positive': None,
+                'negative': None
+            }
+        })
     
     animalsRegistered = collectionBoi.find({'idPecuarista': idUser})
 
