@@ -53,6 +53,8 @@ def logInUser():
 @routes.route('/atualizarUsuario', methods=["GET", "POST"])
 @Authentication.RequireAuth
 def updateUserData(userToken):
+    data = request.get_json()
+
     userData = {
         'name': data.get('name'),
         'email': data.get('email'),
@@ -63,8 +65,6 @@ def updateUserData(userToken):
         return UserControllers.getUserData(userToken["id"])
     
     if request.method == "POST":
-        data = request.get_json()
-
         errors = []
 
         nameValidate = ValInputs.validateName(userData['name'])
@@ -100,21 +100,25 @@ def getMenuData(userToken):
     return FilterControllers.getMenuData(userToken['id'])
 
 # Here starts the Ox Controllers Part
-@routes.route('/sendAnalyzeImage/<idGado>', methods=["POST"])
+@routes.route('/imageAnalyze/<idOx>', methods=["POST"])
 @Authentication.RequireAuth
-def sendImgToAnalyze(token, idGado):
+def sendImgToAnalyze(token, idOx):
+    file = request.files['file']
     # In this route, I need to return the result and its details
-    return OxControllers.sendImgAnalyze(token['id'], idGado)
+    return OxControllers.imageAnalyze(token['id'], idOx, file)
 
-@routes.route('/signupOx', methods=["POST"])
+@routes.route('/signupOx/<idOx>', methods=["POST"])
 @Authentication.RequireAuth
-def signupOx(token, data):
+def signupOx(token, idOx):
+    data = request.get_json()
+
     oxData = {
-        'numIdentificacao': data.get('codigo'),
-        'oxName': data.get('nome'),
-        'img': request.files['imagem']
+        'nTempIdOx': data.get('id'),
+        'name': data.get('name'),
+        'pfp': request.files['file']
     }
-    return OxControllers.signupOx(token['id'], oxData)
+
+    return OxControllers.signupOx(token['id'], idOx, oxData['nTempIdOx'], oxData['name'], oxData['pfp'])
 
 @routes.route('/updateOx/<idGado>', methods=["GET", "POST"])
 @Authentication.RequireAuth
