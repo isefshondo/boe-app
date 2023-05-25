@@ -1,4 +1,4 @@
-from controllers import FilterControllers, OxControllers, UserControllers
+from controllers import filterControllers, OxControllers, userControllers
 from controllers.utils.functions import ValInputs
 from controllers.utils.security import Authentication
 from flask import Blueprint, jsonify, request
@@ -36,7 +36,7 @@ def signUpUser():
     if errors:
         return jsonify({'mensagens': errors}), 400
 
-    return UserControllers.signupUser(userData['name'], userData['email'], userData['password'])
+    return userControllers.signupUser(userData['name'], userData['email'], userData['password'])
 
 @routes.route('/loginUser', methods=["POST"])
 def logInUser():
@@ -47,7 +47,7 @@ def logInUser():
         'senha': data.get('password')
     }
 
-    return UserControllers.loginUser(loginUsuario['email'], loginUsuario['senha'])
+    return userControllers.loginUser(loginUsuario['email'], loginUsuario['senha'])
 
 @routes.route('/atualizarUsuario', methods=["GET", "POST"])
 @Authentication.RequireAuth
@@ -61,7 +61,7 @@ def updateUserData(userToken):
     }
 
     if request.method == "GET":
-        return UserControllers.getUserData(userToken["id"])
+        return userControllers.getUserData(userToken["id"])
     
     if request.method == "POST":
         errors = []
@@ -81,22 +81,22 @@ def updateUserData(userToken):
         if errors:
             return jsonify({'mensagens': errors}), 400
 
-        return UserControllers.updateUserData(userToken["id"], userData['name'], userData['email'], userData['password'])
+        return userControllers.updateUserData(userToken["id"], userData['name'], userData['email'], userData['password'])
 
 @routes.route('/listarPositivos', methods=["GET"])
 @Authentication.RequireAuth
 def getPositiveCases(userToken):
-    return FilterControllers.getPositiveCases(userToken['id'])
+    return filterControllers.getPositiveCases(userToken['id'])
 
 @routes.route('/listarGados', methods=["GET"])
 @Authentication.RequireAuth
 def getAllCases(userToken):
-    return FilterControllers.getAllCases(userToken['id'])
+    return filterControllers.getAllCases(userToken['id'])
 
 @routes.route('/menu', methods=["GET"])
 @Authentication.RequireAuth
 def getMenuData(userToken):
-    return FilterControllers.getMenuData(userToken['id'])
+    return filterControllers.getMenuData(userToken['id'])
 
 # Here starts the Ox Controllers Part
 @routes.route('/imageAnalyze/', methods=["POST"])
