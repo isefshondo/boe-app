@@ -1,8 +1,10 @@
-from flask import jsonify, make_response, current_app
 from bson import ObjectId
 from datetime import date, timedelta
-
+from flask import jsonify, make_response, current_app
 from models.db import db
+
+import base64
+import datetime
 
 def getPositiveCases(id):
     collectionUser = db['usuarios']
@@ -23,15 +25,18 @@ def getPositiveCases(id):
 
         for dados in getBois:
             for historico in dados['historico']:
+                historicoDate = datetime.datetime.strptime(historico['date'], '%Y-%m-%d').date()
+                historicoImage = base64.b64encode(historico['imageAnalyzed']['img']).decode('utf-8')
+                historico['imageAnalyzed']['img'] = historicoImage
                 if historico['resultado'] > 70:
-                    diferenca = abs(historico['data'] - dataAtual)
+                    diferenca = abs(historicoDate - dataAtual)
                     if diferenca < diferencaMinima:
                         diferencaMinima = diferenca
                         historicoBoi = historico
             
             dadosBoi = {
-                'id': dados['_id'],
-                'nome': dados['nome'],
+                'id': str(dados['_id']),
+                'nome': dados['nomeGado'],
                 'fotoPerfil': dados['fotoPerfil'],
                 'status': dados['status'],
                 'historicoRecente': historicoBoi
@@ -62,15 +67,20 @@ def getAllCases(id):
 
         for dados in getBois:
             for historico in dados['historico']:
-                diferenca = abs(historico['data'] - dataAtual)
+                historicoDate = datetime.datetime.strptime(historico['date'], '%Y-%m-%d').date()
+                historicoImage = base64.b64encode(historico['imageAnalyzed']['img']).decode('utf-8')
+                historico['imageAnalyzed']['img'] = historicoImage
+                diferenca = abs(historicoDate - dataAtual)
                 if diferenca < diferencaMinima:
                     diferencaMinima = diferenca
                     historicoBoi = historico
             
+            fotoPerfil = base64.b64encode(dados['fotoPerfil']).decode('utf-8')
+            
             dadosBoi = {
-                'id': dados['_id'],
-                'nome': dados['nome'],
-                'fotoPerfil': dados['fotoPerfil'],
+                'id': str(dados['_id']),
+                'nome': dados['nomeGado'],
+                'fotoPerfil': fotoPerfil,
                 'status': dados['status'],
                 'historicoRecente': historicoBoi
             }
@@ -117,8 +127,9 @@ def getMenuData(idUser):
 
     for dados in animalsRegistered:
         for historico in dados['historico']:
-            difference = abs(historico['data'] - currentDate)
-            if historico['resultado'] > 75:
+            historicoDate = datetime.datetime.strptime(historico['date'], '%Y-%m-%d').date()
+            difference = abs(historicoDate - currentDate)
+            if historico['resultado'] > 70:
                 if difference < minDifference:
                     minDifference = difference
                     sickAnimals += 1

@@ -27,7 +27,7 @@ def imageAnalyze(idUser, idOx, image):
         cachedResults = {
             'image': image,
             'results': sicknessResults,
-            'date': datetime.datetime.now().date()
+            'date': datetime.datetime.now().date().isoformat()
         }
 
         if idOx is None:
@@ -56,11 +56,10 @@ def imageAnalyze(idUser, idOx, image):
     else:
             return jsonify({'message': 'Error! There is no image to analyze'}), 404
 
-def signupOx(id, idOx, tempId, name, pfp):
-    collectionUser = db['usuarios']
+def signupOx(id, idOx, tempId, name, profilePicture):
     collectionBoi = db['gados']
 
-    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
+    imgBytes = profilePicture.read()
 
     cachedResults = Cache.cache.get('tempResults')
 
@@ -68,7 +67,7 @@ def signupOx(id, idOx, tempId, name, pfp):
 
     newRecord = {
         'imageAnalyzed': {
-            'img': cachedResults['image'],
+            'img': (cachedResults['image']).tobytes(),
             'description': 'The lesion is circular with striking white borders.'
         },
         'results': cachedResults['results'],
@@ -83,7 +82,7 @@ def signupOx(id, idOx, tempId, name, pfp):
         collectionBoi.insert_one({
             'numIdentificacao': tempId,
             'nomeGado': name,
-            'fotoPerfil': pfp,
+            'fotoPerfil': imgBytes,
             'status': 'Sem tratamento',
             'idPecuarista': id,
             'historico': records

@@ -111,7 +111,6 @@ def sendImgToAnalyze(token):
 
     fileReceived = data['file']
 
-    # Image must be encoded by base64
     imgDecoded = base64.b64decode(fileReceived)
 
     image = Image.open(io.BytesIO(imgDecoded))
@@ -125,24 +124,18 @@ def analyzeRegisteredOx(token, idOx):
 
     fileReceived = data['file']
 
-    # Image must be encoded by base64
     imgDecoded = base64.b64decode(fileReceived)
 
     image = Image.open(io.BytesIO(imgDecoded))
 
     return OxControllers.imageAnalyze(token['id'], idOx, image)
 
-
 @routes.route('/signupOx', methods=["POST"])
 @Authentication.RequireAuth
 def signupOx(token):
-    data = request.get_json()
+    data = request.form
 
-    fileReceived = data['file']
-
-    imgDecoded = base64.b64decode(fileReceived)
-
-    image = Image.open(io.BytesIO(imgDecoded))
+    image = request.files.get('image')
 
     oxData = {
         'nTempIdOx': data.get("nTempIdOx"),
