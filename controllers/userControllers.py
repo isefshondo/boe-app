@@ -14,18 +14,23 @@ def signupUser(name, email, password):
     senha = (password).encode('utf-8')
     senhaHashed = bcrypt.hashpw(senha, salt)
 
-    if collection.count_documents({'email': email}) == 0:
-        collection.insert_one({
-            'nome': name,
-            'email': email,
-            'senha': senhaHashed
-        })
+    try:
+        if collection.count_documents({'email': email}) == 0:
+            collection.insert_one({
+                'nome': name,
+                'email': email,
+                'senha': senhaHashed
+            })
 
-        response = make_response(jsonify({'mensagem': 'Usuário criado com sucesso!'}), 201)
-    else:
-        response = make_response(jsonify({'mensagem': 'O e-mail fornecido já está cadastrado. Por favor, faça seu login!'}))
-    
-    return response
+            response = make_response(jsonify({'mensagem': 'Usuário criado com sucesso!'}), 201)
+        else:
+            response = make_response(jsonify({'mensagem': 'O e-mail fornecido já está cadastrado. Por favor, faça seu login!'}))
+        
+        return response
+    except Exception as err:
+        return jsonify({'message': err})
+        
+
 
 def loginUser(email, password):
     collection = db['usuarios']
@@ -65,19 +70,24 @@ def getUserData(id):
 
     doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
 
-    if doesUserExist is None:
-        response = jsonify({'message': 'User not found...'})
-        response.status_code = 404
-        response.headers['Content-Type'] = 'application/json'
+    try:
+        if doesUserExist is None:
+            response = jsonify({'message': 'User not found...'})
+            response.status_code = 404
+            response.headers['Content-Type'] = 'application/json'
 
-        return response
-    
-    return jsonify({
-        'id': str(doesUserExist['_id']),
-        'name': doesUserExist['nome'],
-        'email': doesUserExist['email'],
-        'password': 'P4TTERN-PASS'
-    }), 200
+            return response
+        
+        return jsonify({
+            'id': str(doesUserExist['_id']),
+            'name': doesUserExist['nome'],
+            'email': doesUserExist['email'],
+            'password': 'P4TTERN-PASS'
+        }), 200
+    except Exception as err:
+        return jsonify({'message': err})
+
+
     
 def updateUserData(id, name, email, password):
     collectionUser = db['usuarios']
