@@ -57,7 +57,7 @@ def imageAnalyze(idUser, idOx, image):
         else:
                 return jsonify({'message': 'Error! There is no image to analyze'}), 404
     except Exception as err:
-        return jsonify({'message': err})
+        return jsonify({'message': str(err)})
 
     
 
@@ -106,7 +106,7 @@ def signupOx(id, idOx, tempId, name, profilePicture):
         
         return jsonify({'message': 'Success! Data saved successfully'}), 201
     except Exception as err:
-        return jsonify({'message': err})
+        return jsonify({'message': str(err)})
 
 def getOxInfo(idOx):
     collectionOx = db['gados']

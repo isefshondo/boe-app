@@ -28,7 +28,7 @@ def signupUser(name, email, password):
         
         return response
     except Exception as err:
-        return jsonify({'message': err})
+        return jsonify({'message': str(err)})
 
 def loginUser(email, password):
     collection = db['usuarios']
@@ -83,7 +83,7 @@ def getUserData(id):
             'password': 'P4TTERN-PASS'
         }), 200
     except Exception as err:
-        return jsonify({'message': err})
+        return jsonify({'message': str(err)})
 
 def updateUserData(id, name, email, password):
     collectionUser = db['usuarios']

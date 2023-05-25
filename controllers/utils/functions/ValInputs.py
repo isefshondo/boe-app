@@ -43,11 +43,3 @@ def validatePassword(password):
         }
     
     return {'status': True}
-
-def validateConfirmPassword(password, confirmPassword):
-    if not password == confirmPassword and not len(password) == len(confirmPassword):
-        return {
-            'status': False,
-            'mensagem': 'As senham não correspondem.'
-        }
-    return {'status': True}

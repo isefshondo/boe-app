@@ -16,8 +16,7 @@ def signUpUser():
     userData = {
         'name': data.get('name'),
         'email': data.get('email'),
-        'password': data.get('password'),
-        'confirmPassword': data.get('confirmPassword')
+        'password': data.get('password')
     }
 
     errors = []
@@ -33,10 +32,6 @@ def signUpUser():
     passwordValidate = ValInputs.validatePassword(userData['password'])
     if not passwordValidate['status']:
         errors.append(passwordValidate['mensagem'])
-    
-    confirmPasswordValidation = ValInputs.validateConfirmPassword(userData['password'], userData['confirmPassword'])
-    if not confirmPasswordValidation['status']:
-        errors.append(confirmPasswordValidation['mensagem'])
 
     if errors:
         return jsonify({'mensagens': errors}), 400
