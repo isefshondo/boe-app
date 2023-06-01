@@ -49,6 +49,17 @@ def logInUser():
 
     return userControllers.loginUser(loginUsuario['email'], loginUsuario['senha'])
 
+# Fixing: Update and Ox Controllers
+
+# TODO: Perguntar para Rebeca se ela prefere passar o id na URL ou o Token
+
+@routes.route('/updateUser', methods=['GET', 'POST'])
+def updateUser(id):
+    if request.method == 'GET':
+        return
+    if request.method == 'POST':
+        return
+
 @routes.route('/atualizarUsuario', methods=["GET", "POST"])
 @Authentication.RequireAuth
 def updateUserData(userToken):

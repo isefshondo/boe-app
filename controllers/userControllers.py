@@ -7,16 +7,16 @@ import bcrypt
 import jwt
 import datetime
 
-def signupUser(name, email, password):
-    collection = db['usuarios']
+collectionUser = db['usuarios']
 
+def signupUser(name, email, password):
     salt = bcrypt.gensalt(8)
     senha = (password).encode('utf-8')
     senhaHashed = bcrypt.hashpw(senha, salt)
 
     try:
-        if collection.count_documents({'email': email}) == 0:
-            collection.insert_one({
+        if collectionUser.count_documents({'email': email}) == 0:
+            collectionUser.insert_one({
                 'nome': name,
                 'email': email,
                 'senha': senhaHashed
@@ -31,9 +31,7 @@ def signupUser(name, email, password):
         return jsonify({'message': str(err)})
 
 def loginUser(email, password):
-    collection = db['usuarios']
-
-    doesUserExist = collection.find_one({'email': email})
+    doesUserExist = collectionUser.find_one({'email': email})
 
     if doesUserExist is not None:
         dbPassword = doesUserExist['senha']
@@ -63,51 +61,57 @@ def loginUser(email, password):
     else:
         return make_response(jsonify({'mensagem': 'Usuário não encontrado. Por favor, cadastre-se primeiramente.'}), 404)
 
-def getUserData(id):
-    collectionUser = db['usuarios']
+def displayUserData(id):
+    findUser = collectionUser.find_one({'_id': ObjectId(id)})
 
-    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
+    if findUser is not None:
+        try:
+            return jsonify({
+                'id': str(findUser['_id']),
+                'name': findUser['nome'],
+                'email': findUser['email'],
+                'password': 'P4TTERN-PASS'
+            }), 200
+        except Exception as err:
+            return jsonify({'message': str(err)})
+    else:
+        response = jsonify({'message': 'Não foi possível encontrar o usuário...'})
+        response.status_code = 404
+        response.headers['Content-Type'] = 'application/json'
 
-    try:
-        if doesUserExist is None:
-            response = jsonify({'message': 'User not found...'})
-            response.status_code = 404
-            response.headers['Content-Type'] = 'application/json'
+        return response
+
+def updateUser(id, name, email, password):
+    findUser = collectionUser.find_one({'_id': ObjectId(id)})
+
+    if findUser is not None:
+        try:
+            if password == 'P4TTERN-PASS' or bcrypt.checkpw((password).encode('utf-8'), findUser['senha']) is True:
+                collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email}})
+            else:
+                salt = bcrypt.gensalt(8)
+                pw = (password).encode('utf-8')
+                pwHashed = bcrypt.hashpw(pw, salt)
+
+                collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email, 'senha': pwHashed}})
+            
+            response = jsonify({'message': 'Dados atualizados com sucesso'})
+            response.status_code = 201
 
             return response
-        
-        return jsonify({
-            'id': str(doesUserExist['_id']),
-            'name': doesUserExist['nome'],
-            'email': doesUserExist['email'],
-            'password': 'P4TTERN-PASS'
-        }), 200
-    except Exception as err:
-        return jsonify({'message': str(err)})
+        except errors.ConnectionFailure:
+            return jsonify({
+                'message': 'Conexão com base de dados falhou...',
+                'description': 'Sinto muito! Houve uma falha em nossa base de dados.'
+            }), 500
+        except errors.OperationFailure:
+            return jsonify({
+                'message': 'Operação do PyMongo falhou...',
+                'description': 'Sinto muito! Não foi possível concluir a operação'
+            })
+    else:
+        response = jsonify({'message': 'Não foi possível encontrar o usuário...'})
+        response.status_code = 404
+        response.headers['Content-Type'] = 'application/json'
 
-def updateUserData(id, name, email, password):
-    collectionUser = db['usuarios']
-
-    doesUserExist = collectionUser.find_one({'_id': ObjectId(id)})
-
-    try:
-        if password == 'P4TTERN-PASS' or bcrypt.checkpw((password).encode('utf-8'), doesUserExist['senha']) is True:
-            collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email}})
-        else:
-            salt = bcrypt.gensalt(8)
-            senha = (password).encode('utf-8')
-            pwHashed = bcrypt.hashpw(senha, salt)
-
-            collectionUser.update_one({'_id': ObjectId(id)}, {'$set': {'nome': name, 'email': email, 'senha': pwHashed}})
-
-        return jsonify({'message': 'Success! User data is updated'}), 201
-    except errors.ConnectionFailure:
-        return jsonify({
-            'message': 'Sorry! An error ocurred in our database, we cant conclude operations right now',
-            'description': 'Connection with database failed...'
-        }), 500
-    except errors.OperationFailure:
-        return jsonify({
-            'message': 'Sorry! We couldnt execute the process',
-            'description': 'PyMongo operation failed'
-        }), 500
+        return response
