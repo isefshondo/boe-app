@@ -56,9 +56,17 @@ def logInUser():
 @routes.route('/updateUser', methods=['GET', 'POST'])
 def updateUser(id):
     if request.method == 'GET':
-        return
+        return userControllers.displayUserData(id)
     if request.method == 'POST':
-        return
+        data = request.get_json()
+
+        userData = {
+            'name': data.get('name'),
+            'email': data.get('email'),
+            'password': data.get('password')
+        }
+
+        return userControllers.updateUser(id, userData['name'], userData['email'], userData['password'])
 
 @routes.route('/atualizarUsuario', methods=["GET", "POST"])
 @Authentication.RequireAuth
