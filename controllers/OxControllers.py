@@ -1,112 +1,67 @@
+from flask import jsonify
+from bson import Binary, ObjectId
+
 from controllers.utils.functions import GenResults
-from flask import current_app, jsonify, make_response, request
-from bson import ObjectId
-from models.db import db
 from controllers.utils import Cache
+from models.db import db
 
 import datetime
 
-def imageAnalyze(idUser, idOx, image):
-    collectionUser = db['usuarios']
-    collectionBoi = db['gados']
+collectionUser = db['usuarios']
+collectionBoi = db['gados']
 
-    doesUserExist = collectionUser.find_one({'_id': ObjectId(idUser)})
+def getResults(idUser, idOx):
+    findUser = collectionUser.find_one({'_id': ObjectId(idUser)})
+    countOx = collectionBoi.count_documents({'idPecuarista': idUser})
 
-    genOxNumId = collectionBoi.count_documents({'idPecuarista': idUser})
+    if findUser is not None:
+        try:
+            results = GenResults.genRandomResults()
 
-    if doesUserExist is None:
-        response = jsonify({'message': 'User not found...'})
+            tempIdOx = f'A{countOx + 1}'
+
+            saveResults = {
+                'nTempIdOx': tempIdOx,
+                'result': results['results'],
+                'date': datetime.datetime.now().date().isoformat()
+            }
+
+            Cache.cache.set('tempData', saveResults)
+
+            if idOx is None:
+                collectionBoi.insert_one({
+                    'numIdentificacao': tempIdOx,
+                    'idPecuarista': idUser
+                })
+
+                return {
+                    'nTempIdOx': tempIdOx,
+                    'results': {
+                        'percentage': results['results'],
+                        'phase': results['currentPhase'],
+                        'nextSymptons': results['symptonsPhase']
+                    }
+                }
+            else:
+                findOx = collectionBoi.find_one({'_id': ObjectId(idOx)})
+
+                return {
+                    'nIdOx': findOx['numIdentificacao'],
+                    'nameOx': findOx['nomeGado'],
+                    'results': {
+                        'percentage': results['results'],
+                        'phase': results['currentPhase'],
+                        'nextSymptons': results['symptonsPhase']
+                    }
+                }
+        except Exception as err:
+            return {'message': str(err)}
+    else:
+        response = jsonify({'message': 'Não foi possível encontrar o usuário...'})
         response.status_code = 404
         response.headers['Content-Type'] = 'application/json'
 
         return response
-    
-    sicknessResults = GenResults.genRandomResults()
-
-    try:
-        if image is not None:
-            cachedResults = {
-                'image': image,
-                'results': sicknessResults,
-                'date': datetime.datetime.now().date().isoformat()
-            }
-
-            if idOx is None:
-                Cache.cache.set('tempResults', cachedResults)
-
-                return jsonify({
-                    'nTempIdOx': f"A0{genOxNumId + 1}",
-                    'results': {
-                        'percentage': sicknessResults,
-                        # Fase e complicacoes
-                    }
-                })
-            else:
-                findOx = collectionBoi.find_one({'_id': ObjectId(idOx)})
-
-                Cache.cache.set('tempResults', cachedResults)
-
-                return jsonify({
-                    'nIdOx': findOx['numIdentificacao'],
-                    'nameOx': findOx['nomeGado'],
-                    'results': {
-                        'percentage': sicknessResults,
-                        # Fase e complicacoes
-                    }
-                })
-        else:
-                return jsonify({'message': 'Error! There is no image to analyze'}), 404
-    except Exception as err:
-        return jsonify({'message': str(err)})
-
-    
-
-def signupOx(id, idOx, tempId, name, profilePicture):
-    collectionBoi = db['gados']
-
-    try:
-        imgBytes = profilePicture.read()
-
-        cachedResults = Cache.cache.get('tempResults')
-
-        newRecords = None
-
-        newRecord = {
-            'imageAnalyzed': {
-                'img': (cachedResults['image']).tobytes(),
-                'description': 'The lesion is circular with striking white borders.'
-            },
-            'results': cachedResults['results'],
-            'date': cachedResults['date']
-        }
-
-        if idOx is None:
-            records = []
-
-            records.append(newRecord)
-
-            collectionBoi.insert_one({
-                'numIdentificacao': tempId,
-                'nomeGado': name,
-                'fotoPerfil': imgBytes,
-                'status': 'Sem tratamento',
-                'idPecuarista': id,
-                'historico': records
-            })
-        else:
-            findOx = collectionBoi.find_one({'_id': ObjectId(idOx)})
-
-            newRecords = findOx['historico']
-
-            newRecords.append(newRecord)
-
-            collectionBoi.update_one({'_id': ObjectId(idOx)}, {'$set': {'historico': newRecords}})
-
-        Cache.cache.delete('tempResults')
-        
-        return jsonify({'message': 'Success! Data saved successfully'}), 201
-    except Exception as err:
-        return jsonify({'message': str(err)})
 
 def getOxInfo(idOx):
     collectionOx = db['gados']
@@ -133,3 +88,61 @@ def updateOx(idOx, data):
         return jsonify({'mensagem': 'Não foi possível encontrar o gado selecionado'}, 400)
     
     collectionOx.update_one({'_id': ObjectId(idOx)}, {'$set': {'status': data.get('status')}})
+
+def getCow():
+    tempData = Cache.cache.get('tempData')
+
+    try:
+        return jsonify({
+            'tempIdCow': tempData['nTempIdOx'],
+            'results': tempData['result'],
+            'date': tempData['date']
+        })
+    except Exception as err:
+        return jsonify({'message': str(err)})
+
+def signupCow(idUser, idCow, image, tempIdCow, name):
+
+    tempData = Cache.cache.get('tempData')
+
+    newRecords = None
+
+    newRecord = {
+        'imageAnalyzed': {
+            'description': 'Apresenta lesões circulares com bordar esbranquiçadas.'
+        },
+        'results': tempData['result'],
+        'date': tempData['date']
+    }
+
+    try:
+        if idCow is None and image is not None:
+            records = []
+
+            records.append(newRecord)
+
+            imgBytes = image.read()
+
+            collectionBoi.update_one(
+                {'numIdentificacao': str(tempIdCow)},
+                {'$set': {
+                    'nomeGado': name,
+                    'fotoPerfil': Binary(imgBytes),
+                    'status': 'Sem tratamento',
+                    'historico': records
+                }}
+            )
+        else:
+            findOx = collectionBoi.find_one({'_id': ObjectId(idCow)})
+
+            newRecords = findOx['historico']
+
+            newRecords.append(newRecord)
+
+            collectionBoi.update_one({'_id': ObjectId(idCow)}, {'$set': {'historico': newRecords}})
+
+        Cache.cache.delete('tempData')
+    except Exception as err:
+        return jsonify({'message': str(err)})
+        
+    return jsonify({'message': 'Success! Data saved successfully'}), 201

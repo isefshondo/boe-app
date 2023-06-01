@@ -55,11 +55,11 @@ def loginUser(email, password):
                     'mensagem': 'Usuário logado com sucesso!'
                 }), 200
             else:
-                return make_response(jsonify({'mensagem': 'Email ou senha incorretos...'}), 400)
+                raise ValueError('Email ou senha incorretos...')
         except UnicodeDecodeError:
             return make_response(jsonify({'mensagem': 'Erro ao decodificar a senha do usuário.'}), 500)
     else:
-        return make_response(jsonify({'mensagem': 'Usuário não encontrado. Por favor, cadastre-se primeiramente.'}), 404)
+        raise ValueError('Usuário não encontrado. Por favor, cadastre-se primeiramente.')
 
 def displayUserData(id):
     findUser = collectionUser.find_one({'_id': ObjectId(id)})
