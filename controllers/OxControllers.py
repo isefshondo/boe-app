@@ -5,7 +5,11 @@ from controllers.utils.functions import GenResults
 from controllers.utils import Cache
 from models.db import db
 
+import base64
 import datetime
+import numpy as np
+import cv2
+import imghdr
 
 collectionUser = db['usuarios']
 collectionBoi = db['gados']
@@ -146,3 +150,41 @@ def signupCow(idUser, idCow, image, tempIdCow, name):
         return jsonify({'message': str(err)})
         
     return jsonify({'message': 'Success! Data saved successfully'}), 201
+
+def rotateImage(image):
+    EXTENSION_FORMAT_MAP = {
+        '.png': 'PNG',
+        '.jpg': 'JPEG',
+        '.jpeg': 'JPEG',
+        '.gif': 'GIF'
+    }
+
+    height, width = image.shape[:2]
+
+    center = (width/2, height/2)
+
+    matrixRotation = cv2.getRotationMatrix2D(center, 180, 1.0)
+
+    rotatedImage = cv2.warpAffine(image, matrixRotation, (width, height), borderValue=(255, 255, 255))
+
+    rotatedCenter = np.dot(matrixRotation, [center[0], center[1], 1])
+
+    xDist = center[0] - rotatedCenter[0]
+    yDist = center[1] - rotatedCenter[1]
+
+    translationMatrix = np.float32([[1, 0, xDist], [0, 1, yDist]])
+
+    translatedImage = cv2.warpAffine(rotatedImage, translationMatrix, (width, height), borderValue=(255, 255, 255))
+
+    # Convertendo a imagem para o formato RGB
+    translatedImage = cv2.cvtColor(translatedImage, cv2.COLOR_BGR2RGB)
+
+    # Determinar o formato da imagem com base no tipo de dado da matriz numpy
+    dtype_name = image.dtype.name.lower()
+    file_extension = next((ext for ext, fmt in EXTENSION_FORMAT_MAP.items() if fmt.lower() == dtype_name), '.png')
+    file_format = EXTENSION_FORMAT_MAP.get(file_extension, 'PNG')
+
+    retval, buffer = cv2.imencode(file_extension, translatedImage)
+    imageBase64 = base64.b64encode(buffer).decode('utf-8')
+
+    return imageBase64

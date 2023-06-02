@@ -1,7 +1,5 @@
 venv/
 
-views/
-
 .env
 
 __pycache__/
