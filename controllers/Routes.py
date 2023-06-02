@@ -65,17 +65,17 @@ def updateUser(id):
 
         return userControllers.updateUser(id['id'], userData['name'], userData['email'], userData['password'])
 
-@routes.route('/listarPositivos', methods=["GET"])
-def getPositiveCases(userToken):
-    return filterControllers.getPositiveCases(userToken['id'])
+@routes.route('/listarPositivos/<id>', methods=["GET"])
+def getPositiveCases(id):
+    return filterControllers.getPositiveCases(id)
 
-@routes.route('/listarGados', methods=["GET"])
-def getAllCases(userToken):
-    return filterControllers.getAllCases(userToken['id'])
+@routes.route('/listarGados/<id>', methods=["GET"])
+def getAllCases(id):
+    return filterControllers.getAllCases(id)
 
-@routes.route('/menu', methods=["GET"])
-def getMenuData(userToken):
-    return filterControllers.getMenuData(userToken['id'])
+@routes.route('/menu/<id>', methods=["GET"])
+def getMenuData(id):
+    return filterControllers.getMenuData(id)
 
 @routes.route('/getResults/<idUser>', methods=["GET"])
 def getResults(idUser):
