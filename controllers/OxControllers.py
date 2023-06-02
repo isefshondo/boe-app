@@ -5,7 +5,10 @@ from controllers.utils.functions import GenResults
 from controllers.utils import Cache
 from models.db import db
 
+import base64
+import cv2
 import datetime
+import numpy as np
 
 collectionUser = db['usuarios']
 collectionBoi = db['gados']
@@ -146,3 +149,39 @@ def signupCow(idUser, idCow, image, tempIdCow, name):
         return jsonify({'message': str(err)})
         
     return jsonify({'message': 'Success! Data saved successfully'}), 201
+
+def rotateImage(image):
+    EXTENSION_FORMAT_MAP = {
+        '.png': 'PNG',
+        '.jpg': 'JPEG',
+        '.jpeg': 'JPEG',
+        '.gif': 'GIF'
+    }
+
+    height, width = image.shape[:2]
+
+    center = (width/2, height/2)
+
+    matrixRotation = cv2.getRotationMatrix2D(center, 180, 1.0)
+
+    rotatedImage = cv2.warpAffine(image, matrixRotation, (width, height), borderValue=(255, 255, 255))
+
+    rotatedCenter = np.dot(matrixRotation, [center[0], center[1], 1])
+
+    xDist = center[0] - rotatedCenter[0]
+    yDist = center[1] - rotatedCenter[1]
+
+    translationMatrix = np.float32([[1, 0, xDist], [0, 1, yDist]])
+
+    translatedImage = cv2.warpAffine(rotatedImage, translationMatrix, (width, height), borderValue=(255, 255, 255))
+
+    fileExtension = '.png'
+    for extension in EXTENSION_FORMAT_MAP.keys():
+        if image.format.lower().endswith(extension):
+            fileExtension = extension
+            break
+
+    retval, buffer = cv2.imencode(fileExtension, translatedImage)
+    imageBase64 = base64.b64encode(buffer).decode('utf-8')
+
+    return imageBase64

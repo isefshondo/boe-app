@@ -6,6 +6,7 @@ from PIL import Image
 
 import base64
 import io
+import numpy as np
 
 routes = Blueprint('routes', __name__)
 
@@ -64,17 +65,17 @@ def updateUser(id):
 
         return userControllers.updateUser(id['id'], userData['name'], userData['email'], userData['password'])
 
-@routes.route('/listarPositivos', methods=["GET"])
-def getPositiveCases(userToken):
-    return filterControllers.getPositiveCases(userToken['id'])
+@routes.route('/listarPositivos/<id>', methods=["GET"])
+def getPositiveCases(id):
+    return filterControllers.getPositiveCases(id)
 
-@routes.route('/listarGados', methods=["GET"])
-def getAllCases(userToken):
-    return filterControllers.getAllCases(userToken['id'])
+@routes.route('/listarGados/<id>', methods=["GET"])
+def getAllCases(id):
+    return filterControllers.getAllCases(id)
 
-@routes.route('/menu', methods=["GET"])
-def getMenuData(userToken):
-    return filterControllers.getMenuData(userToken['id'])
+@routes.route('/menu/<id>', methods=["GET"])
+def getMenuData(id):
+    return filterControllers.getMenuData(id)
 
 @routes.route('/getResults/<idUser>', methods=["GET"])
 def getResults(idUser):
@@ -99,7 +100,7 @@ def signupCow(idUser):
         return OxControllers.signupCow(idUser, None, cowData['image'], cowData['nTempId'], cowData['nameCow'])
 
 @routes.route('/signupCow/<idUser>/<idCow>', methods=['GET', 'POST'])
-def signupCow(idUser, idCow):
+def signupExistingCow(idUser, idCow):
     if request.method == 'GET':
         return OxControllers.getCow()
     if request.method == 'POST':
@@ -122,4 +123,10 @@ def updateOx(idGado):
     
 @routes.route('/rotateImage', methods=['POST'])
 def rotateImage():
-    return 
+    image = request.files['image']
+
+    imgPil = Image.open(io.BytesIO(image.read()))
+
+    imgArray = np.array(imgPil)
+
+    return OxControllers.rotateImage(imgArray)
