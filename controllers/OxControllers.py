@@ -176,10 +176,8 @@ def rotateImage(image):
 
     translatedImage = cv2.warpAffine(rotatedImage, translationMatrix, (width, height), borderValue=(255, 255, 255))
 
-    # Convertendo a imagem para o formato RGB
     translatedImage = cv2.cvtColor(translatedImage, cv2.COLOR_BGR2RGB)
 
-    # Determinar o formato da imagem com base no tipo de dado da matriz numpy
     dtype_name = image.dtype.name.lower()
     file_extension = next((ext for ext, fmt in EXTENSION_FORMAT_MAP.items() if fmt.lower() == dtype_name), '.png')
     file_format = EXTENSION_FORMAT_MAP.get(file_extension, 'PNG')
