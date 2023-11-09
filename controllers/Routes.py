@@ -1,10 +1,8 @@
 from controllers import filterControllers, OxControllers, userControllers
 from controllers.utils.functions import ValInputs
-from controllers.utils.security import Authentication
 from flask import Blueprint, jsonify, request, json
 from PIL import Image
 
-import base64
 import io
 import numpy as np
 

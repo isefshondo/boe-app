@@ -9,7 +9,6 @@ import base64
 import datetime
 import numpy as np
 import cv2
-import imghdr
 
 collectionUser = db['usuarios']
 collectionBoi = db['gados']
