@@ -150,38 +150,23 @@ def signupCow(idUser, idCow, image, tempIdCow, name):
         
     return jsonify({'message': 'Success! Data saved successfully'}), 201
 
-def rotateImage(image):
-    EXTENSION_FORMAT_MAP = {
-        '.png': 'PNG',
-        '.jpg': 'JPEG',
-        '.jpeg': 'JPEG',
-        '.gif': 'GIF'
-    }
+def rotateImage(img):
+    imgBytes = base64.b64decode(img.split(",")[-1])
 
-    height, width = image.shape[:2]
+    imgPil = Image.open(io.BytesIO(imgBytes))
 
-    center = (width/2, height/2)
+    image = np.array(imgPil)
 
-    matrixRotation = cv2.getRotationMatrix2D(center, 180, 1.0)
+    height, width = image.shape[0], image.shape[1]
 
-    rotatedImage = cv2.warpAffine(image, matrixRotation, (width, height), borderValue=(255, 255, 255))
+    matrix = cv2.getRotationMatrix2D((width / 2, height / 2), 180, 1.0)
 
-    rotatedCenter = np.dot(matrixRotation, [center[0], center[1], 1])
+    imgRotated = cv2.warpAffine(image, matrix, (width, height))
 
-    xDist = center[0] - rotatedCenter[0]
-    yDist = center[1] - rotatedCenter[1]
+    rgb = cv2.cvtColor(imgRotated, cv2.COLOR_BGR2RGB)
 
-    translationMatrix = np.float32([[1, 0, xDist], [0, 1, yDist]])
+    _, imgBase64 = cv2.imencode("." + imgPil.format.lower(), rgb)
 
-    translatedImage = cv2.warpAffine(rotatedImage, translationMatrix, (width, height), borderValue=(255, 255, 255))
+    imgBase64 = "data:image/" + imgPil.format.lower() + ";base64," + base64.b64encode(imgBase64).decode('utf-8')
 
-    translatedImage = cv2.cvtColor(translatedImage, cv2.COLOR_BGR2RGB)
-
-    dtype_name = image.dtype.name.lower()
-    file_extension = next((ext for ext, fmt in EXTENSION_FORMAT_MAP.items() if fmt.lower() == dtype_name), '.png')
-    file_format = EXTENSION_FORMAT_MAP.get(file_extension, 'PNG')
-
-    retval, buffer = cv2.imencode(file_extension, translatedImage)
-    imageBase64 = base64.b64encode(buffer).decode('utf-8')
-
-    return imageBase64
+    return imgBase64

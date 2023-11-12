@@ -62,6 +62,10 @@ def updateUser(id):
         }
 
         return userControllers.updateUser(id['id'], userData['name'], userData['email'], userData['password'])
+    
+@routes.route('/deleteUser/<id>', methods=['DELETE'])
+def deleteUser(id):
+    return userControllers.deleteUser(id['id'])
 
 @routes.route('/listarPositivos/<id>', methods=["GET"])
 def getPositiveCases(id):
@@ -121,16 +125,14 @@ def updateOx(idGado):
     
 @routes.route('/rotateImage', methods=['POST'])
 def rotateImage():
-    image = request.files['image']
+    data = request.json
 
-    imgPil = Image.open(io.BytesIO(image.read()))
+    imgBase = data['image']
 
-    imgArray = np.array(imgPil)
+    rotatedImage = OxControllers.rotateImage(imgBase)
 
-    rotatedImage = OxControllers.rotateImage(imgArray)
-
-    responseData = {
-        'imgRotated': rotatedImage
-    }
-
-    return json.dumps(responseData), 200, {'Content-Type': 'application/json'}
+    return jsonify({
+        'message': 'Imagem rotacionada',
+        'imgRotacionada': rotatedImage,
+        'status': 201
+    })

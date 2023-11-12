@@ -115,3 +115,31 @@ def updateUser(id, name, email, password):
         response.headers['Content-Type'] = 'application/json'
 
         return response
+    
+def deleteUser(id):
+    findUser = collectionUser.find_one({'_id': ObjectId(id)})
+
+    if findUser is not None:
+        try:
+            collectionUser.delete_one({'_id': ObjectId(id)})
+        except errors.ConnectionFailure:
+            return jsonify({
+                'message': 'Conexão com base de dados falhou...',
+                'description': 'Sinto muito! Houve uma falha em nossa base de dados.',
+                'status': 500
+            }), 500
+        except errors.OperationFailure:
+            return jsonify({
+                'message': 'Operação do PyMongo falhou...',
+                'description': 'Sinto muito! Não foi possível concluir a operação',
+                'status': 500
+            }), 500
+    else:
+        response = jsonify({
+            'message': 'Não foi possível encontrar o usuário...',
+            'status': 404
+        })
+        response.status_code = 404
+        response.headers['Content-Type'] = 'application/json'
+        
+        return response

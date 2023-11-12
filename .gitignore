@@ -1,5 +1,5 @@
-venv/
+# Ignoring Python Files
+__pycache__
 
+# Ignoring config files
 .env
-
-__pycache__/

@@ -4,12 +4,10 @@ import os
 
 load_dotenv()
 
-mongodb_username = os.getenv("MONGODB_USERNAME")
 mongodb_password = os.getenv("MONGODB_PASSWORD")
-mongodb_cluster = os.getenv("MONGODB_CLUSTER")
 mongodb_name = os.getenv("MONGODB_NAME")
 
-uri = f"mongodb+srv://{mongodb_username}:{mongodb_password}@{mongodb_cluster}/{mongodb_name}?retryWrites=true&w=majority"
+uri = f"mongodb+srv://isefshondo:{mongodb_password}@boecluster.bz4yg1l.mongodb.net/{mongodb_name}?retryWrites=true&w=majority"
 
 # Create a new client and connect to the server
 client = MongoClient(uri)
