@@ -1,10 +1,6 @@
 from controllers import filterControllers, OxControllers, userControllers
 from controllers.utils.functions import ValInputs
 from flask import Blueprint, jsonify, request, json
-from PIL import Image
-
-import io
-import numpy as np
 
 routes = Blueprint('routes', __name__)
 
@@ -51,7 +47,7 @@ def logInUser():
 @routes.route('/updateUser/<id>', methods=['GET', 'PUT'])
 def updateUser(id):
     if request.method == 'GET':
-        return userControllers.displayUserData(id['id'])
+        return userControllers.displayUserData(id)
     if request.method == 'PUT':
         data = request.get_json()
 
@@ -61,23 +57,23 @@ def updateUser(id):
             'password': data.get('password')
         }
 
-        return userControllers.updateUser(id['id'], userData['name'], userData['email'], userData['password'])
+        return userControllers.updateUser(id, userData['name'], userData['email'], userData['password'])
     
 @routes.route('/deleteUser/<id>', methods=['DELETE'])
-def deleteUser(id):
-    return userControllers.deleteUser(id['id'])
+def deletarUsuario(id):
+    return userControllers.deleteUser(id)
 
-@routes.route('/listarPositivos/<id>', methods=["GET"])
-def getPositiveCases(id):
-    return filterControllers.getPositiveCases(id)
+@routes.route('/listarPositivos/<idUser>', methods=["GET"])
+def getPositiveCases(idUser):
+    return filterControllers.getPositiveCases(idUser)
 
-@routes.route('/listarGados/<id>', methods=["GET"])
-def getAllCases(id):
-    return filterControllers.getAllCases(id)
+@routes.route('/listarGados/<idUser>', methods=["GET"])
+def getAllCases(idUser):
+    return filterControllers.getAllCases(idUser)
 
-@routes.route('/menu/<id>', methods=["GET"])
-def getMenuData(id):
-    return filterControllers.getMenuData(id)
+@routes.route('/menu/<idUser>', methods=["GET"])
+def getMenuData(idUser):
+    return filterControllers.getMenuData(idUser)
 
 @routes.route('/getResults/<idUser>', methods=["GET"])
 def getResults(idUser):
@@ -94,12 +90,11 @@ def signupCow(idUser):
     if request.method == 'POST':
 
         cowData = {
-            'nTempId': request.form['tempIdCow'],
-            'nameCow': request.form['name'],
-            'image': request.files['image']
+            'nameCow': request.form['cowName'],
+            'image': request.files['picInput']
         }
 
-        return OxControllers.signupCow(idUser, None, cowData['image'], cowData['nTempId'], cowData['nameCow'])
+        return OxControllers.signupCow(idUser, None, cowData['image'], cowData['nameCow'])
 
 @routes.route('/signupCow/<idUser>/<idCow>', methods=['GET', 'POST'])
 def signupExistingCow(idUser, idCow):
@@ -114,14 +109,6 @@ def signupExistingCow(idUser, idCow):
         }
 
         return OxControllers.signupCow(idUser, idCow, cowData['image'], cowData['nTempId'], cowData['nameCow'])
-
-@routes.route('/updateCow/<idGado>', methods=["GET", "POST"])
-def updateOx(idGado):
-    if request.method == 'GET':
-        return OxControllers.getOxInfo(idGado)
-    if request.method == 'POST':
-        data = request.get_json()
-        return OxControllers.updateOx(idGado, data)
     
 @routes.route('/rotateImage', methods=['POST'])
 def rotateImage():

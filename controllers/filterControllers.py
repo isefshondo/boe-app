@@ -1,10 +1,8 @@
 from bson import ObjectId
-from datetime import date, timedelta
 from flask import jsonify
 from models.db import db
 
 import base64
-import datetime
 
 def getPositiveCases(id):
     collectionUser = db['usuarios']
@@ -14,33 +12,36 @@ def getPositiveCases(id):
 
     boisFiltrados = []
     dadosBoi = None
-    historicoBoi = None
 
     if doesUserExist is not None:
-        
-        getBois = collectionBoi.find({'idPecuarista': id})
 
-        dataAtual = date.today()
-        diferencaMinima = timedelta(days=365)
+        getBois = collectionBoi.find({
+            '$and': [
+                {'idPecuarista': id},
+                {'historico': {'$exists': True}}
+            ]
+        })
 
         for dados in getBois:
-            for historico in dados['historico']:
-                historicoDate = datetime.datetime.strptime(historico['date'], '%Y-%m-%d').date()
-                historicoImage = base64.b64encode(historico['imageAnalyzed']['img']).decode('utf-8')
-                historico['imageAnalyzed']['img'] = historicoImage
-                if historico['resultado'] > 70:
-                    diferenca = abs(historicoDate - dataAtual)
-                    if diferenca < diferencaMinima:
-                        diferencaMinima = diferenca
-                        historicoBoi = historico
-            
-            dadosBoi = {
-                'id': str(dados['_id']),
-                'nome': dados['nomeGado'],
-                'fotoPerfil': dados['fotoPerfil'],
-                'status': dados['status'],
-                'historicoRecente': historicoBoi
-            }
+
+            if dados['historico'][len(dados['historico']) - 1]['results'] > 50:            
+                dadosBoi = {
+                    'id': str(dados['_id']),
+                    'tempId': dados['numIdentificacao'],
+                    'nome': dados['nomeGado'],
+                    'fotoPerfil': base64.b64encode(dados['fotoPerfil']).decode('utf-8'),
+                    'status': dados['status'],
+                    'historicoBoi': dados['historico'][len(dados['historico']) - 1]['results']
+                }
+            else:
+                dadosBoi = {
+                    'id': str(dados['_id']),
+                    'tempId': dados['numIdentificacao'],
+                    'nome': dados['nomeGado'],
+                    'fotoPerfil': base64.b64encode(dados['fotoPerfil']).decode('utf-8'),
+                    'status': dados['status'],
+                    'historicoBoi': None
+                }
 
             boisFiltrados.append(dadosBoi)
         
@@ -56,33 +57,26 @@ def getAllCases(id):
 
     boisFiltrados = []
     dadosBoi = None
-    historicoBoi = None
 
     if doesUserExist is not None:
         
-        getBois = collectionBoi.find({'idPecuarista': id})
-
-        dataAtual = date.today()
-        diferencaMinima = timedelta(days=365)
+        getBois = collectionBoi.find({
+            '$and': [
+                {'idPecuarista': id},
+                {'historico': {'$exists': True}}
+            ]
+        })
 
         for dados in getBois:
-            for historico in dados['historico']:
-                historicoDate = datetime.datetime.strptime(historico['date'], '%Y-%m-%d').date()
-                historicoImage = base64.b64encode(historico['imageAnalyzed']['img']).decode('utf-8')
-                historico['imageAnalyzed']['img'] = historicoImage
-                diferenca = abs(historicoDate - dataAtual)
-                if diferenca < diferencaMinima:
-                    diferencaMinima = diferenca
-                    historicoBoi = historico
-            
             fotoPerfil = base64.b64encode(dados['fotoPerfil']).decode('utf-8')
             
             dadosBoi = {
                 'id': str(dados['_id']),
+                'tempId': dados['numIdentificacao'],
                 'nome': dados['nomeGado'],
                 'fotoPerfil': fotoPerfil,
                 'status': dados['status'],
-                'historicoRecente': historicoBoi
+                'historicoRecente': dados['historico'][len(dados['historico']) - 1]['results']
             }
 
             boisFiltrados.append(dadosBoi)
@@ -109,43 +103,27 @@ def getMenuData(idUser):
     if numRegisteredCases == 0:
         return jsonify({
             'userName': doesUserExist['nome'],
-            'registeredCases': None,
-            'positiveCases': None,
+            'registeredCases': 0,
+            'positiveCases': 0,
             'generalCases': {
-                'positive': None,
-                'negative': None
+                'positive': 0,
+                'negative': 0
             }
         })
-    
-    animalsRegistered = collectionBoi.find({'idPecuarista': idUser})
 
-    currentDate = date.today()
-    minDifference = timedelta(days=365)
+    countAnimalsId = collectionBoi.count_documents({'idPecuarista': idUser})
 
-    sickAnimals = 0
-    healthyAnimals = 0
+    countAnimalsPositive = collectionBoi.count_documents({
+        '$and': [
+            {'idPecuarista': idUser},
+            {'historico.results': {'$gt': 50}}
+        ]
+    })
 
-    for dados in animalsRegistered:
-        for historico in dados['historico']:
-            historicoDate = datetime.datetime.strptime(historico['date'], '%Y-%m-%d').date()
-            difference = abs(historicoDate - currentDate)
-            if historico['resultado'] > 70:
-                if difference < minDifference:
-                    minDifference = difference
-                    sickAnimals += 1
-            else:
-                if difference < minDifference:
-                    minDifference = difference
-                    healthyAnimals += 1
-    
-    positiveCases = (sickAnimals * 100)/numRegisteredCases
+    positiveCases = (countAnimalsPositive * 100)/countAnimalsId
 
     return jsonify({
         'userName': doesUserExist['nome'],
-        'registeredCases': numRegisteredCases,
-        'positiveCases': positiveCases,
-        'generalCases': {
-            'positive': sickAnimals,
-            'negative': healthyAnimals
-        }
+        'registeredCases': countAnimalsId,
+        'positiveCases': round(positiveCases)
     })

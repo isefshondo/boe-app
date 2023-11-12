@@ -1,14 +1,17 @@
-from flask import jsonify
-from bson import Binary, ObjectId
+from flask import Flask, jsonify
+from bson import ObjectId, Binary
+from PIL import Image
+
+import datetime
+import base64
+import numpy as np
+import cv2
+import io
 
 from controllers.utils.functions import GenResults
 from controllers.utils import Cache
-from models.db import db
 
-import base64
-import datetime
-import numpy as np
-import cv2
+from models.db import db
 
 collectionUser = db['usuarios']
 collectionBoi = db['gados']
@@ -42,8 +45,11 @@ def getResults(idUser, idOx):
                     'results': {
                         'percentage': results['results'],
                         'phase': results['currentPhase'],
-                        'nextSymptons': results['symptonsPhase']
-                    }
+                        'nextSymptons': results['symptonsPhase'],
+                        'level': results['level'],
+                        'details': results['details']
+                    },
+                    'status': 201
                 }
             else:
                 findOx = collectionBoi.find_one({'_id': ObjectId(idOx)})
@@ -55,58 +61,26 @@ def getResults(idUser, idOx):
                         'percentage': results['results'],
                         'phase': results['currentPhase'],
                         'nextSymptons': results['symptonsPhase']
-                    }
+                    },
+                    'status': 201
                 }
         except Exception as err:
             return {'message': str(err)}
     else:
-        response = jsonify({'message': 'Não foi possível encontrar o usuário...'})
+        response = jsonify({
+            'message': 'Não foi possível encontrar o usuário...',
+            'status': 201
+        })
         response.status_code = 404
         response.headers['Content-Type'] = 'application/json'
 
         return response
 
-def getOxInfo(idOx):
-    collectionOx = db['gados']
-
-    getOx = collectionOx.find_one({'_id': ObjectId(idOx)})
-
-    if getOx is None:
-        return jsonify({'mensagem': 'Não foi possível encontrar o gado selecionado'}, 400)
-    
-    return jsonify({
-        'numId': getOx['numIdentificacao'],
-        'nomeGado': getOx['nomeGado'],
-        'fotoPerfil': getOx['fotoPerfil'],
-        'status': getOx['status'],
-        'historico': getOx['historico']
-    })
-
-def updateOx(idOx, data):
-    collectionOx = db['gados']
-
-    getOx = collectionOx.find_one({'_id': ObjectId(idOx)})
-
-    if getOx is None:
-        return jsonify({'mensagem': 'Não foi possível encontrar o gado selecionado'}, 400)
-    
-    collectionOx.update_one({'_id': ObjectId(idOx)}, {'$set': {'status': data.get('status')}})
-
-def getCow():
-    tempData = Cache.cache.get('tempData')
-
-    try:
-        return jsonify({
-            'tempIdCow': tempData['nTempIdOx'],
-            'results': tempData['result'],
-            'date': tempData['date']
-        })
-    except Exception as err:
-        return jsonify({'message': str(err)})
-
-def signupCow(idUser, idCow, image, tempIdCow, name):
+def signupCow(idUser, idCow, image, name):
 
     tempData = Cache.cache.get('tempData')
+
+    print(tempData)
 
     newRecords = None
 
@@ -127,7 +101,12 @@ def signupCow(idUser, idCow, image, tempIdCow, name):
             imgBytes = image.read()
 
             collectionBoi.update_one(
-                {'numIdentificacao': str(tempIdCow)},
+                {
+                    '$and': [
+                        {'idPecuarista': idUser},
+                        {'numIdentificacao': tempData['nTempIdOx']}
+                    ]
+                },
                 {'$set': {
                     'nomeGado': name,
                     'fotoPerfil': Binary(imgBytes),
@@ -145,10 +124,57 @@ def signupCow(idUser, idCow, image, tempIdCow, name):
             collectionBoi.update_one({'_id': ObjectId(idCow)}, {'$set': {'historico': newRecords}})
 
         Cache.cache.delete('tempData')
+        return jsonify({
+            'message': 'Success! Data saved successfully',
+            'status': 201
+        }), 201
     except Exception as err:
         return jsonify({'message': str(err)})
         
-    return jsonify({'message': 'Success! Data saved successfully'}), 201
+def getCow():
+    tempData = Cache.cache.get('tempData')
+
+    try:
+        return jsonify({
+            'tempIdCow': tempData['nTempIdOx'],
+            'results': tempData['result'],
+            'date': tempData['date'],
+            'status': 200
+        }), 200
+    except Exception as err:
+        return jsonify({'message': str(err)})
+
+def getOxInfo(idOx):
+    collectionOx = db['gados']
+
+    getOx = collectionOx.find_one({'_id': ObjectId(idOx)})
+
+    if getOx is None:
+        return jsonify({
+            'mensagem': 'Não foi possível encontrar o gado selecionado',
+            'status': 400
+        }), 400
+    
+    return jsonify({
+        'cowData': {
+            'numId': getOx['numIdentificacao'],
+            'nomeGado': getOx['nomeGado'],
+            'fotoPerfil': getOx['fotoPerfil'],
+            'status': getOx['status'],
+            'historico': getOx['historico']
+        },
+        'status': 200
+    }), 200
+
+def updateOx(idOx, data):
+    collectionOx = db['gados']
+
+    getOx = collectionOx.find_one({'_id': ObjectId(idOx)})
+
+    if getOx is None:
+        return jsonify({'mensagem': 'Não foi possível encontrar o gado selecionado'}, 400)
+    
+    collectionOx.update_one({'_id': ObjectId(idOx)}, {'$set': {'status': data.get('status')}})
 
 def rotateImage(img):
     imgBytes = base64.b64decode(img.split(",")[-1])
